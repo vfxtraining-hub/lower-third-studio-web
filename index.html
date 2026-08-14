@@ -2116,17 +2116,40 @@ async function generateBatch({ downloadZip = true } = {}) {
 
 function wireExportButtons() {
   const bind = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
-  bind("btnGenOne", () => regenerateSelected(false));
+  bind("btnGenOne", () => regenerateSelected(false)); // still generate
   bind("btnGenOne2", () => regenerateSelected(false));
-  // Stills only on explicit still buttons (btnDlOne2 / btnGenOne)
-  bind("btnDlOne2", () => regenerateSelected(true));
-  // btnDlOne is primary animation download (wired in wireSimpleUx)
-  bind("btnDlOneAnimFallback", () => (typeof renderAnimatedTitle === "function" ? renderAnimatedTitle(selected(), {download:true}) : null));
-  bind("btnRegenOne", () => regenerateSelected(false));
-  bind("btnGenBatch", () => generateBatch({ downloadZip: false }));
+  bind("btnDlOne2", () => regenerateSelected(true)); // still download only
+  bind("btnRegenOne", () => {
+    if ($("animDeliver")) $("animDeliver").value = "pngseq";
+    if ($("exportFormat")) $("exportFormat").value = "full-alpha";
+    if ($("mbSamples") && Number($("mbSamples").value) < 16) $("mbSamples").value = "16";
+    if (typeof renderAnimatedTitle === "function") renderAnimatedTitle(selected(), { download: true });
+    else $("btnRenderOne")?.click();
+  });
+  bind("btnGenBatch", () => generateBatch({ downloadZip: false })); // stills
   bind("btnGenBatch2", () => generateBatch({ downloadZip: false }));
-  bind("btnDlBatch", () => generateBatch({ downloadZip: true }));
-  bind("btnDlBatch2", () => generateBatch({ downloadZip: true }));
+  bind("btnDlBatch", () => {
+    if ($("animDeliver")) $("animDeliver").value = "pngseq";
+    if ($("exportFormat")) $("exportFormat").value = "full-alpha";
+    if ($("mbSamples") && Number($("mbSamples").value) < 16) $("mbSamples").value = "16";
+    if (typeof renderAllAnimated === "function") renderAllAnimated();
+    else $("btnRenderBatch")?.click();
+  });
+  bind("btnDlBatch2", () => generateBatch({ downloadZip: true })); // still zip
+  // Ensure primary animation buttons always force full quality
+  bind("btnRenderOne", () => {
+    if ($("animDeliver")) $("animDeliver").value = "pngseq";
+    if ($("exportFormat")) $("exportFormat").value = "full-alpha";
+    if ($("mbSamples") && Number($("mbSamples").value) < 16) $("mbSamples").value = "16";
+    // fall through: original handler may re-bind - call function directly
+    renderAnimatedTitle(selected(), { download: true });
+  });
+  bind("btnRenderBatch", () => {
+    if ($("animDeliver")) $("animDeliver").value = "pngseq";
+    if ($("exportFormat")) $("exportFormat").value = "full-alpha";
+    if ($("mbSamples") && Number($("mbSamples").value) < 16) $("mbSamples").value = "16";
+    renderAllAnimated();
+  });
   // aspect quick-set export size
   document.querySelectorAll("[data-aspect]").forEach((b) => {
     b.addEventListener("click", () => {
@@ -3295,9 +3318,17 @@ wireSimpleUx();
   if (!el || el._aliased) return;
   el._aliased = true;
   el.addEventListener("click", () => {
-    if (id === "btnDlOneAdv") ($("btnDlOne") || $("btnDlOne2"))?.click() || (typeof regenerateSelected==="function" && regenerateSelected(true));
-    if (id === "btnDlBatchAdv") ($("btnDlBatch") || $("btnDlBatch2"))?.click() || (typeof generateBatch==="function" && generateBatch({downloadZip:true}));
-    if (id === "btnPlayAdv") (typeof playIn==="function" ? playIn() : $("btnPlay")?.click());
+    if (id === "btnDlOneAdv") {
+      if ($("animDeliver")) $("animDeliver").value = "pngseq";
+      if (typeof renderAnimatedTitle === "function") renderAnimatedTitle(selected(), { download: true });
+      else $("btnRenderOne")?.click();
+    }
+    if (id === "btnDlBatchAdv") {
+      if ($("animDeliver")) $("animDeliver").value = "pngseq";
+      if (typeof renderAllAnimated === "function") renderAllAnimated();
+      else $("btnRenderBatch")?.click();
+    }
+    if (id === "btnPlayAdv") (typeof playIn === "function" ? playIn() : null);
   });
 });
 
