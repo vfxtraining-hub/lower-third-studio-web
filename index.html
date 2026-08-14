@@ -1357,16 +1357,41 @@ function renderPerson() {
 function fitText() {
   const name = $("nameEl");
   const title = $("titleEl");
+  if (!name || !title) return;
+  const stage = $("stage");
   const card = name.parentElement;
-  const max = Math.max(320, ($("stage").clientWidth * 0.55) | 0);
+  const portrait = stage && stage.classList.contains("portrait");
+  // Available width inside card (stage width minus logo/gap/margins)
+  const stageW = stage ? stage.clientWidth : 800;
+  const logoBox = $("logoBox");
+  const logoW = logoBox ? logoBox.getBoundingClientRect().width : (portrait ? 56 : 92);
+  const sidePad = portrait ? stageW * 0.10 : 72 + 40;
+  const max = Math.max(120, stageW - logoW - sidePad - 36);
   name.style.fontSize = "";
   title.style.fontSize = "";
+  // Let CSS portrait clamps apply first
+  if (portrait) {
+    // ellipsis CSS handles overflow; only shrink if still overflowing
+    let ns = parseFloat(getComputedStyle(name).fontSize);
+    let ts = parseFloat(getComputedStyle(title).fontSize);
+    let guard = 40;
+    while (name.scrollWidth > max && ns > 13 && guard--) {
+      ns -= 0.5; name.style.fontSize = ns + "px";
+    }
+    guard = 40;
+    while (title.scrollWidth > max && ts > 10 && guard--) {
+      ts -= 0.5; title.style.fontSize = ts + "px";
+    }
+    return;
+  }
   let ns = parseFloat(getComputedStyle(root).getPropertyValue("--name-size"));
   let ts = parseFloat(getComputedStyle(root).getPropertyValue("--title-size"));
-  while (name.scrollWidth > max && ns > 18) {
+  let guard = 60;
+  while (name.scrollWidth > max && ns > 16 && guard--) {
     ns -= 1; name.style.fontSize = ns + "px";
   }
-  while (title.scrollWidth > max && ts > 12) {
+  guard = 60;
+  while (title.scrollWidth > max && ts > 11 && guard--) {
     ts -= 1; title.style.fontSize = ts + "px";
   }
 }
@@ -1582,11 +1607,18 @@ $("btnChecker").onclick = () => {
   $("stage").classList.toggle("solid", solidStage);
 };
 document.querySelectorAll("[data-aspect]").forEach((b) => {
-  b.onclick = () => {
-    $("stage").classList.toggle("portrait", b.dataset.aspect === "9x16");
-    fitText();
-  };
-});
+    b.onclick = () => {
+      const port = b.dataset.aspect === "9x16";
+      $("stage").classList.toggle("portrait", port);
+      if ($("exportW") && $("exportH")) {
+        if (port) { $("exportW").value = 1080; $("exportH").value = 1920; }
+        else { $("exportW").value = 1920; $("exportH").value = 1080; }
+      }
+      // Re-fit type after layout settles
+      requestAnimationFrame(() => { fitText(); });
+      if ($("statusPill")) $("statusPill").textContent = port ? "9:16 · L3 scaled to fit" : "16:9";
+    };
+  });
 
 $("btnLoadEmbedded").onclick = () => {
   people = normalizePeople(structuredClone(EMBEDDED_PEOPLE));
@@ -2355,52 +2387,26 @@ async function previewInOut() {
 async function drawAnimatedFrame(ctx, W, H, person, logoImg, theme, timing, t, pose) {
   const p = pose || poseAtTime(t, timing);
   const fmt = $("exportFormat")?.value || "full-alpha";
-  // Always full-frame for animation deliverables
-  const refH = 1080;
+  // Frame-safe layout for 16:9 and 9:16
   const userScale = +($("exportScale")?.value || 1);
-  const s = (H / refH) * userScale;
-
-  let logoSize = parseFloat(theme.logoSize) * s;
-  let nameSize = parseFloat(theme.nameSize) * s;
-  let titleSize = parseFloat(theme.titleSize) * s;
-  let padX = parseFloat(theme.padX) * s;
-  let padY = parseFloat(theme.padY) * s;
-  let gap = parseFloat(theme.gapLogo) * s;
-  let radius = parseFloat(theme.radius) * s;
-  let accentW = parseFloat(theme.accentW) * s;
-  let left = parseFloat(theme.l3Left) * (H / refH);
-  let bottom = parseFloat(theme.l3Bottom) * (H / refH);
-
-  const maxText = W * 0.55;
-  ctx.save();
-  {
-    const _nt = parseFloat(theme.nameTracking) || 0.04;
-    const _tt = parseFloat(theme.titleTracking) || 0.12;
-    const _nw = theme.nameWeight || 600;
-    const _tw = theme.titleWeight || 500;
-    const mtw = (typeof measureTrackedWidth === "function") ? measureTrackedWidth : (c,t,f)=>measureTextWidth(c,t,f);
-    while (mtw(ctx, person.name, `${_nw} ${nameSize}px ${theme.fontName}`, _nt, nameSize) > maxText && nameSize > 14 * s) nameSize -= 1;
-    while (mtw(ctx, displayTitle(person), `${_tw} ${titleSize}px ${theme.fontTitle}`, _tt, titleSize) > maxText && titleSize > 10 * s) titleSize -= 1;
+  const L = frameLayout(W, H, theme, userScale);
+  let { s, left, bottom, logoSize, padX, padY, gap, radius, accentW } = L;
+  const ty = shrinkTypeToWidth(ctx, person, theme, L);
+  let { nameSize, titleSize, nameFontF, titleFontF } = ty;
+  const nameTrackEm = ty.nameTrack;
+  const titleTrackEm = ty.titleTrack;
+  const cardH = ty.cardH;
+  const cardW = ty.cardW;
+  const blockH = ty.blockH;
+  const blockW = ty.blockW;
+  if (left + blockW > W - L.rightPad) {
+    left = Math.max(L.rightPad * 0.5, W - L.rightPad - blockW);
   }
-
-  const nameWgt = theme.nameWeight || 600;
-  const titleWgt = theme.titleWeight || 500;
-  const nameFontF = `${nameWgt} ${nameSize}px ${theme.fontName}`;
-  const titleFontF = `${titleWgt} ${titleSize}px ${theme.fontTitle}`;
-  const nameTrackEm = parseFloat(theme.nameTracking) || 0.04;
-  const titleTrackEm = parseFloat(theme.titleTracking) || 0.12;
-  const nameW = (typeof measureTrackedWidth === "function")
-    ? measureTrackedWidth(ctx, person.name, nameFontF, nameTrackEm, nameSize)
-    : measureTextWidth(ctx, person.name, nameFontF);
-  const titleW = (typeof measureTrackedWidth === "function")
-    ? measureTrackedWidth(ctx, displayTitle(person), titleFontF, titleTrackEm, titleSize)
-    : measureTextWidth(ctx, displayTitle(person), titleFontF);
-  const textW = Math.max(nameW, titleW);
-  const cardH = padY * 2 + nameSize * 1.1 + 6 * s + titleSize * 1.25;
-  const cardW = Math.ceil(textW + padX * 2 + accentW);
-  const blockH = Math.max(logoSize, cardH);
-  const originX = left + p.x * s;
-  const originY = H - bottom - blockH + p.y * s;
+  // Motion offsets in design pixels, scaled to frame
+  const motionS = Math.min(W / 1920, H / 1080);
+  const originX = left + p.x * motionS;
+  const originY = H - bottom - blockH + p.y * motionS;
+  ctx.save();
 
   // Global opacity + scale around block center
   const cx = originX + (logoSize + gap + cardW) / 2;
