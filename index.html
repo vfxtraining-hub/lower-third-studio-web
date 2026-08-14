@@ -146,7 +146,7 @@
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0,0,0,.5);
   }
-  .stage.portrait { aspect-ratio: 9 / 16; width: min(100%, 420px); }
+  .stage.portrait { aspect-ratio: 9 / 16; width: min(100%, 380px); max-height: min(78vh, 720px); }
   .stage.solid { background: var(--stage-bg); background-image: none; }
   .plate {
     position: absolute;
@@ -432,6 +432,50 @@
     }
     body.mode-simple main.stage-wrap { order: -1; min-height: 45vh; }
   }
+
+
+  .stage.portrait .l3 {
+    left: 5% !important;
+    right: 5% !important;
+    bottom: 5.5% !important;
+    max-width: 90% !important;
+    width: auto;
+    gap: 10px;
+  }
+  .stage.portrait .logo-box {
+    width: clamp(48px, 14cqi, 72px) !important;
+    height: clamp(48px, 14cqi, 72px) !important;
+    flex: 0 0 clamp(48px, 14cqi, 72px) !important;
+  }
+  .stage.portrait { container-type: inline-size; }
+  .stage.portrait .card {
+    min-width: 0 !important;
+    max-width: 100%;
+    flex: 1 1 auto;
+    padding: 12px 14px !important;
+    overflow: hidden;
+  }
+  .stage.portrait .name {
+    font-size: clamp(14px, 7.2cqi, 26px) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .stage.portrait .title {
+    font-size: clamp(10px, 4.6cqi, 15px) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    letter-spacing: 0.06em !important;
+  }
+  .stage:not(.portrait) .l3 {
+    max-width: min(920px, calc(100% - var(--l3-left) - 40px));
+  }
+  .stage:not(.portrait) .card { min-width: 0; max-width: 100%; overflow: hidden; }
+  .stage:not(.portrait) .name,
+  .stage:not(.portrait) .title { overflow: hidden; text-overflow: ellipsis; }
 
 </style>
 </head>
@@ -1889,52 +1933,24 @@ async function renderPersonToCanvas(person, opts = {}) {
     ctx.fillRect(0, 0, W, H);
   }
 
-  // Base sizes at 1080p reference, then scale to frame + user scale
-  const refH = 1080;
-  const s = (H / refH) * scale;
-
-  let logoSize = parseFloat(theme.logoSize) * s;
-  let nameSize = parseFloat(theme.nameSize) * s;
-  let titleSize = parseFloat(theme.titleSize) * s;
-  let padX = parseFloat(theme.padX) * s;
-  let padY = parseFloat(theme.padY) * s;
-  let gap = parseFloat(theme.gapLogo) * s;
-  let radius = parseFloat(theme.radius) * s;
-  let accentW = parseFloat(theme.accentW) * s;
-  let left = parseFloat(theme.l3Left) * (H / refH);
-  let bottom = parseFloat(theme.l3Bottom) * (H / refH);
-
-  const nameFont = `${theme.nameWeight || 600} ${nameSize}px ${theme.fontName}`;
-  const titleFont = `${theme.titleWeight || 500} ${titleSize}px ${theme.fontTitle}`;
-
-  // Shrink fonts if needed for long names
-  const maxText = W * 0.55;
-  {
-    const _nt = parseFloat(theme.nameTracking) || 0.04;
-    const _tt = parseFloat(theme.titleTracking) || 0.12;
-    const _nw = theme.nameWeight || 600;
-    const _tw = theme.titleWeight || 500;
-    const mtw = (typeof measureTrackedWidth === "function") ? measureTrackedWidth : (c,t,f)=>measureTextWidth(c,t,f);
-    while (mtw(ctx, person.name, `${_nw} ${nameSize}px ${theme.fontName}`, _nt, nameSize) > maxText && nameSize > 14 * s) nameSize -= 1;
-    while (mtw(ctx, displayTitle(person), `${_tw} ${titleSize}px ${theme.fontTitle}`, _tt, titleSize) > maxText && titleSize > 10 * s) titleSize -= 1;
+  // Frame-safe layout (16:9 and 9:16)
+  const L = frameLayout(W, H, theme, scale);
+  let { s, left, bottom, logoSize, padX, padY, gap, radius, accentW } = L;
+  const ty = shrinkTypeToWidth(ctx, person, theme, L);
+  let { nameSize, titleSize, nameFontF, titleFontF } = ty;
+  const nameTrackEm = ty.nameTrack;
+  const titleTrackEm = ty.titleTrack;
+  const textW = ty.textW;
+  const cardH = ty.cardH;
+  let cardW = ty.cardW;
+  const blockH = ty.blockH;
+  let blockW = ty.blockW;
+  if (left + blockW > W - L.rightPad) {
+    left = Math.max(L.rightPad * 0.5, W - L.rightPad - blockW);
   }
-  const nameWgt = theme.nameWeight || 600;
-  const titleWgt = theme.titleWeight || 500;
-  const nameFontF = `${nameWgt} ${nameSize}px ${theme.fontName}`;
-  const titleFontF = `${titleWgt} ${titleSize}px ${theme.fontTitle}`;
-  const nameTrackEm = parseFloat(theme.nameTracking) || 0.04;
-  const titleTrackEm = parseFloat(theme.titleTracking) || 0.12;
-  const nameW = (typeof measureTrackedWidth === "function")
-    ? measureTrackedWidth(ctx, person.name, nameFontF, nameTrackEm, nameSize)
-    : measureTextWidth(ctx, person.name, nameFontF);
-  const titleW = (typeof measureTrackedWidth === "function")
-    ? measureTrackedWidth(ctx, displayTitle(person), titleFontF, titleTrackEm, titleSize)
-    : measureTextWidth(ctx, displayTitle(person), titleFontF);
-  const textW = Math.max(nameW, titleW);
-  const cardH = padY * 2 + nameSize * 1.1 + 6 * s + titleSize * 1.25;
-  const cardW = Math.ceil(textW + padX * 2 + accentW);
-  const blockH = Math.max(logoSize, cardH);
-  const blockW = logoSize + gap + cardW;
+  if (bottom + blockH > H * 0.92) {
+    bottom = Math.max(24, H * 0.05);
+  }
 
   let originX, originY;
   if (fmt === "l3-alpha") {
@@ -2384,6 +2400,99 @@ async function previewInOut() {
  * Draw one animated frame of the L3 onto a full-size canvas at absolute time t.
  * pose overrides default rest pose for motion blur subframes.
  */
+
+/* ── Frame-aware L3 layout (16:9 + 9:16 safe) ── */
+function frameLayout(W, H, theme, userScale) {
+  userScale = userScale != null ? userScale : (+($("exportScale")?.value || 1));
+  const s = Math.min(W / 1920, H / 1080) * userScale;
+  const isPortrait = H > W * 1.15;
+
+  let left = parseFloat(theme.l3Left || 72) * (W / 1920);
+  let bottom = parseFloat(theme.l3Bottom || 80) * (H / 1080);
+  let rightPad = Math.max(24 * (W / 1920), W * 0.04);
+
+  if (isPortrait) {
+    left = Math.max(W * 0.05, 20);
+    rightPad = Math.max(W * 0.05, 20);
+    bottom = Math.max(H * 0.055, 40);
+  }
+
+  let logoSize = parseFloat(theme.logoSize || 92) * s;
+  let nameSize = parseFloat(theme.nameSize || 40) * s;
+  let titleSize = parseFloat(theme.titleSize || 18) * s;
+  let padX = parseFloat(theme.padX || 28) * s;
+  let padY = parseFloat(theme.padY || 18) * s;
+  let gap = parseFloat(theme.gapLogo || 16) * s;
+  let radius = parseFloat(theme.radius || 6) * s;
+  let accentW = parseFloat(theme.accentW || 5) * s;
+
+  if (isPortrait) {
+    logoSize = Math.min(logoSize, W * 0.15);
+    nameSize = Math.min(nameSize, W * 0.052);
+    titleSize = Math.min(titleSize, W * 0.030);
+    padX = Math.min(padX, W * 0.032);
+    padY = Math.min(padY, H * 0.011);
+    gap = Math.min(gap, W * 0.022);
+    accentW = Math.min(accentW, 4);
+  }
+
+  const maxBlockW = W - left - rightPad;
+  const maxTextW = Math.max(80, maxBlockW - logoSize - gap - padX * 2 - accentW);
+
+  return {
+    s, isPortrait, left, bottom, rightPad, logoSize, nameSize, titleSize,
+    padX, padY, gap, radius, accentW, maxBlockW, maxTextW,
+  };
+}
+
+function shrinkTypeToWidth(ctx, person, theme, L) {
+  let nameSize = L.nameSize;
+  let titleSize = L.titleSize;
+  const nameWgt = theme.nameWeight || 600;
+  const titleWgt = theme.titleWeight || 500;
+  let nt = parseFloat(theme.nameTracking) || 0.04;
+  let tt = parseFloat(theme.titleTracking) || 0.12;
+  if (L.isPortrait) {
+    nt = Math.min(nt, 0.028);
+    tt = Math.min(tt, 0.07);
+  }
+  const title = (typeof displayTitle === "function") ? displayTitle(person) : (person.title || "");
+  const mtw = (text, font, track, size) => {
+    if (typeof measureTrackedWidth === "function") {
+      return measureTrackedWidth(ctx, text, font, track, size);
+    }
+    ctx.font = font;
+    return ctx.measureText(text || "").width;
+  };
+
+  let guard = 80;
+  while (mtw(person.name, `${nameWgt} ${nameSize}px ${theme.fontName}`, nt, nameSize) > L.maxTextW && nameSize > 11 && guard--) {
+    nameSize -= 0.5;
+  }
+  guard = 80;
+  while (mtw(title, `${titleWgt} ${titleSize}px ${theme.fontTitle}`, tt, titleSize) > L.maxTextW && titleSize > 9 && guard--) {
+    titleSize -= 0.5;
+  }
+
+  const nameFontF = `${nameWgt} ${nameSize}px ${theme.fontName}`;
+  const titleFontF = `${titleWgt} ${titleSize}px ${theme.fontTitle}`;
+  const nameW = mtw(person.name, nameFontF, nt, nameSize);
+  const titleW = mtw(title, titleFontF, tt, titleSize);
+  const textW = Math.max(nameW, titleW);
+  let cardW = Math.ceil(textW + L.padX * 2 + L.accentW);
+  const maxCard = Math.max(60, L.maxBlockW - L.logoSize - L.gap);
+  cardW = Math.min(cardW, maxCard);
+  const cardH = L.padY * 2 + nameSize * 1.15 + Math.max(4, 6 * L.s) + titleSize * 1.3;
+  const blockH = Math.max(L.logoSize, cardH);
+  const blockW = L.logoSize + L.gap + cardW;
+  return {
+    nameSize, titleSize, nameFontF, titleFontF,
+    nameTrack: nt, titleTrack: tt, title, textW,
+    cardW, cardH, blockH, blockW,
+  };
+}
+
+
 async function drawAnimatedFrame(ctx, W, H, person, logoImg, theme, timing, t, pose) {
   const p = pose || poseAtTime(t, timing);
   const fmt = $("exportFormat")?.value || "full-alpha";
