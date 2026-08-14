@@ -448,7 +448,7 @@
 </header>
 
 <aside>
-  <p class="simple-hero-hint">Pick a person → preview → download. Open <b>Advanced</b> only when you need colors, fonts, animation, or batch tools.</p>
+  <p class="simple-hero-hint">Pick a person → preview → <b>Download animation</b> (full PNG sequence + motion blur). Open <b>Advanced</b> for colors, fonts, timing, WebM, or stills.</p>
   <input type="search" class="simple-search" id="peopleSearch" placeholder="Search name or title…" autocomplete="off" />
 
   <label class="simple-vm" id="simpleVmRow">
@@ -464,7 +464,7 @@
   <div class="sec" style="margin-top:8px">
     <div class="stack-btns">
       <button type="button" class="btn" id="btnPlay" style="flex:1">Play</button>
-      <button type="button" class="btn ghost" id="btnDlOne" style="flex:1">Download PNG</button>
+      <button type="button" class="btn ghost" id="btnDlOne" style="flex:1">Download animation</button>
     </div>
   </div>
 
@@ -527,13 +527,14 @@
 
 <main class="stage-wrap">
   <div class="simple-bar">
-    <button type="button" class="btn-primary" id="btnDlOneSimple">Download PNG</button>
-    <button type="button" class="btn-sec" id="btnPlaySimple">Play animation</button>
+    <button type="button" class="btn-primary" id="btnDlOneSimple">Download animation</button>
+    <button type="button" class="btn-sec" id="btnDlBatchSimple">Download all animations</button>
+    <button type="button" class="btn-sec" id="btnPlaySimple">Preview play</button>
     <button type="button" class="btn-sec" id="btnPreviewAnimSimple">In → Out</button>
     <button type="button" class="btn-sec" data-aspect="16x9">16:9</button>
     <button type="button" class="btn-sec" data-aspect="9x16">9:16</button>
-    <button type="button" class="btn-sec" id="btnDlBatchSimple">Download all PNGs</button>
     <div class="grow"></div>
+    <span class="pill" id="simpleExportHint" style="font-size:11px">Full quality PNG sequence + motion blur</span>
     <button type="button" class="btn-sec" id="btnOpenAdvanced">More controls…</button>
   </div>
   <div class="toolbar toolbar-full">
@@ -542,8 +543,8 @@
     <button type="button" class="btn ghost" id="btnChecker">Checker / Solid</button>
     <button type="button" class="btn ghost" id="btnCycle">Cycle all</button>
     <button type="button" class="btn ghost" id="btnReplayLogo">Replay logo</button>
-    <button type="button" class="btn" id="btnGenOne">Generate PNG</button>
-    <button type="button" class="btn ghost" id="btnGenBatch">Generate batch</button>
+    <button type="button" class="btn" id="btnGenOne">Still PNG</button>
+    <button type="button" class="btn ghost" id="btnGenBatch">Still batch</button>
     <button type="button" class="btn ghost" id="btnDlOneAdv">Download title</button>
     <button type="button" class="btn ghost" id="btnDlBatchAdv">Download all</button>
     <button type="button" class="btn ghost" id="btnRegenOne">Regenerate</button>
@@ -690,8 +691,8 @@
     <div class="export-box">
       <label class="field">Output format
         <select id="exportFormat">
-          <option value="l3-alpha">L3 only · transparent PNG</option>
-          <option value="full-alpha">Full frame · transparent PNG</option>
+          <option value="full-alpha" selected>Full frame · transparent (best for Resolve/AE)</option>
+          <option value="l3-alpha">L3 only · tight crop + alpha</option>
           <option value="full-bg">Full frame · solid stage color</option>
         </select>
       </label>
@@ -753,27 +754,27 @@
       </label>
       <label class="field">Render deliverable
         <select id="animDeliver">
-          <option value="webm">WebM video (VP9/alpha when supported)</option>
-          <option value="webm-vp8">WebM video (VP8, wider support)</option>
-          <option value="pngseq">PNG sequence (ZIP) · max quality + alpha</option>
+          <option value="pngseq" selected>PNG sequence (ZIP) · max quality + alpha</option>
+          <option value="webm">WebM video (faster, smaller)</option>
+          <option value="webm-vp8">WebM VP8 (wider support)</option>
           <option value="still">Still PNG only (no animation)</option>
         </select>
       </label>
       <div class="stack-btns">
         <button type="button" class="btn ghost" id="btnPreviewAnim">Preview in→out</button>
-        <button type="button" class="btn" id="btnRenderOne">Render animated title</button>
-        <button type="button" class="btn" id="btnRenderBatch">Render all animated (ZIP)</button>
+        <button type="button" class="btn" id="btnRenderOne">Download animation (this title)</button>
+        <button type="button" class="btn" id="btnRenderBatch">Download all animations (ZIP)</button>
       </div>
       <p class="hint" id="animPreviewHint">Motion blur is temporal multi-sample (true path blur), not a fake CSS filter. PNG sequence is the cleanest for Resolve/AE.</p>
       <div class="stack-btns">
-        <button type="button" class="btn" id="btnGenOne2">Generate this title</button>
-        <button type="button" class="btn ghost" id="btnDlOne2">Download this</button>
-        <button type="button" class="btn" id="btnGenBatch2">Generate all</button>
-        <button type="button" class="btn ghost" id="btnDlBatch2">Download all (ZIP)</button>
+        <button type="button" class="btn" id="btnGenOne2">Still PNG (this title)</button>
+        <button type="button" class="btn ghost" id="btnDlOne2">Still PNG download</button>
+        <button type="button" class="btn" id="btnGenBatch2">Still PNGs (all)</button>
+        <button type="button" class="btn ghost" id="btnDlBatch2">Still PNGs ZIP</button>
       </div>
       <progress id="exportProg" value="0" max="100" hidden></progress>
       <div id="exportLog"></div>
-      <p class="hint" style="margin-top:8px">Generate builds a PNG from current colors/fonts/logo. Regenerate rebuilds after style changes. Batch zips every person in the roster.</p>
+      <p class="hint" style="margin-top:8px">Default export is a full animated PNG sequence (ZIP) with motion blur — import into Resolve/AE at your FPS. Still PNGs are optional below.</p>
     </div>
   </div>
   <div class="sec">
@@ -2117,8 +2118,10 @@ function wireExportButtons() {
   const bind = (id, fn) => { const el = $(id); if (el) el.onclick = fn; };
   bind("btnGenOne", () => regenerateSelected(false));
   bind("btnGenOne2", () => regenerateSelected(false));
-  bind("btnDlOne", () => regenerateSelected(true));
+  // Stills only on explicit still buttons (btnDlOne2 / btnGenOne)
   bind("btnDlOne2", () => regenerateSelected(true));
+  // btnDlOne is primary animation download (wired in wireSimpleUx)
+  bind("btnDlOneAnimFallback", () => (typeof renderAnimatedTitle === "function" ? renderAnimatedTitle(selected(), {download:true}) : null));
   bind("btnRegenOne", () => regenerateSelected(false));
   bind("btnGenBatch", () => generateBatch({ downloadZip: false }));
   bind("btnGenBatch2", () => generateBatch({ downloadZip: false }));
@@ -3164,7 +3167,7 @@ function setAppMode(mode) {
   if (ma) ma.classList.toggle("on", !simple);
   try { localStorage.setItem("l3studio.uiMode", simple ? "simple" : "advanced"); } catch (_) {}
   if ($("statusPill")) {
-    $("statusPill").textContent = simple ? "Simple · pick → download" : "Advanced · full controls";
+    $("statusPill").textContent = simple ? "Simple · pick → download animation" : "Advanced · full controls";
   }
   fitText?.();
 }
@@ -3180,11 +3183,48 @@ function wireSimpleUx() {
     if (a && b) a.addEventListener("click", () => b.click());
   };
   // After all handlers bound, wire aliases at end
-  $("btnDlOneSimple")?.addEventListener("click", () => {
-    const t = $("btnDlOne") || $("btnDlOne2") || $("btnGenOne");
-    if (t) t.click();
-    else if (typeof regenerateSelected === "function") regenerateSelected(true);
-  });
+  async function runFullQualityAnimOne() {
+    // Force fullest-quality defaults for the simple path
+    if ($("animDeliver")) $("animDeliver").value = "pngseq";
+    if ($("exportFormat")) $("exportFormat").value = "full-alpha";
+    if ($("mbSamples") && Number($("mbSamples").value) < 16) $("mbSamples").value = "16";
+    if ($("exportHoldLogo")) $("exportHoldLogo").checked = true;
+    if ($("statusPill")) $("statusPill").textContent = "Rendering full animation…";
+    if ($("simpleExportHint")) $("simpleExportHint").textContent = "Rendering PNG sequence…";
+    try {
+      if (typeof renderAnimatedTitle === "function") {
+        await renderAnimatedTitle(typeof selected === "function" ? selected() : null, { download: true });
+      } else {
+        $("btnRenderOne")?.click();
+      }
+    } finally {
+      if ($("simpleExportHint")) $("simpleExportHint").textContent = "Full quality PNG sequence + motion blur";
+    }
+  }
+  async function runFullQualityAnimBatch() {
+    if ($("animDeliver")) $("animDeliver").value = "pngseq";
+    if ($("exportFormat")) $("exportFormat").value = "full-alpha";
+    if ($("mbSamples") && Number($("mbSamples").value) < 16) $("mbSamples").value = "16";
+    if ($("exportHoldLogo")) $("exportHoldLogo").checked = true;
+    if ($("statusPill")) $("statusPill").textContent = "Rendering all animations…";
+    if ($("simpleExportHint")) $("simpleExportHint").textContent = "Batch rendering…";
+    try {
+      if (typeof renderAllAnimated === "function") {
+        await renderAllAnimated();
+      } else {
+        $("btnRenderBatch")?.click();
+      }
+    } finally {
+      if ($("simpleExportHint")) $("simpleExportHint").textContent = "Full quality PNG sequence + motion blur";
+    }
+  }
+  $("btnDlOneSimple")?.addEventListener("click", () => { runFullQualityAnimOne(); });
+  $("btnDlOne")?.addEventListener("click", (e) => {
+    // Primary aside button = full animation (not still)
+    e.preventDefault();
+    e.stopImmediatePropagation?.();
+    runFullQualityAnimOne();
+  }, true);
   $("btnPlaySimple")?.addEventListener("click", () => {
     if (typeof playIn === "function") playIn();
     else $("btnPlay")?.click();
@@ -3193,11 +3233,7 @@ function wireSimpleUx() {
     if (typeof previewInOut === "function") previewInOut();
     else $("btnPreviewAnim")?.click();
   });
-  $("btnDlBatchSimple")?.addEventListener("click", () => {
-    const t = $("btnDlBatch") || $("btnDlBatch2");
-    if (t) t.click();
-    else if (typeof generateBatch === "function") generateBatch({ downloadZip: true });
-  });
+  $("btnDlBatchSimple")?.addEventListener("click", () => { runFullQualityAnimBatch(); });
 
   // Search filter
   const search = $("peopleSearch");
