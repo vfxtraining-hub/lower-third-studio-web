@@ -1,0 +1,9 @@
+{
+  "name": "Lower Third Studio",
+  "short_name": "L3 Studio",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0e1116",
+  "theme_color": "#0e1116",
+  "description": "Broadcast lower thirds — Aventura 30-Year logo, roster, export"
+}
