@@ -4377,19 +4377,28 @@ function measureTextWidth(ctx, text, font) {
 
 
 
-/** Dual title plate — full on-air title (override or roster). Uppercase for package. */
+/** Dual title plate — full on-air title without "City of Aventura". Uppercase for package. */
+function dualTitleStripOrg(s) {
+  return String(s || "")
+    .replace(/\s*[·|,]\s*City of Aventura\s*$/i, "")
+    .replace(/\s*City of Aventura\s*/gi, " ")
+    .replace(/\s*[·|]\s*/g, " · ")
+    .replace(/\s+/g, " ")
+    .replace(/^[·\s]+|[·\s]+$/g, "")
+    .trim();
+}
+
 function dualTitleShort(p) {
   if (!p) return "";
   // dualTitle / titleOverride / displayTitle — never auto-shorten to SEAT only
+  // Always drop "City of Aventura" on the dual title plate (cleaner package)
+  let full = "";
   if (p.dualTitle && String(p.dualTitle).trim()) {
-    return String(p.dualTitle).replace(/\s*[·|]\s*/g, " · ").replace(/\s+/g, " ").trim().toUpperCase();
+    full = p.dualTitle;
+  } else {
+    full = (typeof displayTitle === "function" ? displayTitle(p) : (p.title || p.baseTitle || ""));
   }
-  const full = (typeof displayTitle === "function" ? displayTitle(p) : (p.title || p.baseTitle || ""));
-  return String(full || "")
-    .replace(/\s*[·|]\s*/g, " · ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toUpperCase();
+  return dualTitleStripOrg(full).toUpperCase();
 }
 
 function dualNameText(p) {
