@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Lower Third Studio — Aventura</title>
-<meta name="description" content="Broadcast lower-third designer. Animated PNG sequences with alpha for DaVinci Resolve. AI-operable via window.L3Studio and ai/OPERATOR_PROMPT.md." />
+<title>VFXtraining AI Assist — Lower Third Studio</title>
+<meta name="description" content="VFXtraining AI Assist · Lower Third Studio. Broadcast lower-third designer with animated PNG sequences for DaVinci Resolve. AI-operable via window.L3Studio." />
+<meta name="application-name" content="VFXtraining AI Assist" />
+<meta name="ai-product" content="VFXtraining AI Assist" />
+<meta name="ai-module" content="Lower Third Studio" />
 <meta name="ai-operator" content="ai/OPERATOR_PROMPT.md" />
 <meta name="ai-api" content="window.L3Studio" />
 <meta name="ai-api-schema" content="ai/machine-api.json" />
@@ -21,6 +24,71 @@
   Default mission: wizard/preset → renderAll PNG sequences → scripts/import_l3_to_resolve.py
 -->
 <style>
+  /* ── Access gate (client-side; for shared preview links) ── */
+  body.gate-locked > *:not(#authGate) { display: none !important; }
+  body.gate-unlocked #authGate { display: none !important; }
+  #authGate {
+    position: fixed; inset: 0; z-index: 2147483000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(900px 480px at 20% 0%, rgba(10,132,255,0.18), transparent 55%),
+      radial-gradient(700px 400px at 90% 20%, rgba(191,90,242,0.1), transparent 50%),
+      #000;
+    color: #f5f5f7;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  }
+  #authGate .auth-card {
+    width: min(400px, 100%);
+    padding: 28px 26px 24px;
+    border-radius: 18px;
+    background: rgba(28, 28, 30, 0.88);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  #authGate .auth-brand {
+    font-size: 11px; font-weight: 650; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #98989d; margin: 0 0 8px;
+  }
+  #authGate h1 {
+    margin: 0 0 6px; font-size: 22px; font-weight: 650; letter-spacing: -0.03em;
+  }
+  #authGate .auth-sub {
+    margin: 0 0 20px; font-size: 13px; color: #98989d; line-height: 1.45;
+  }
+  #authGate label {
+    display: block; font-size: 12px; color: #98989d; margin-bottom: 6px; font-weight: 500;
+  }
+  #authGate input[type="password"] {
+    width: 100%; box-sizing: border-box;
+    padding: 12px 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.35); color: #f5f5f7;
+    font-size: 15px; outline: none;
+  }
+  #authGate input[type="password"]:focus {
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 3px rgba(10,132,255,0.22);
+  }
+  #authGate .auth-row {
+    display: flex; gap: 10px; margin-top: 14px; align-items: center;
+  }
+  #authGate button {
+    flex: 1; padding: 12px 16px; border-radius: 10px; border: none;
+    background: #0a84ff; color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  #authGate button:hover { filter: brightness(1.08); }
+  #authGate button:active { transform: scale(0.98); }
+  #authGate .auth-err {
+    min-height: 18px; margin: 10px 0 0; font-size: 12px; color: #ff453a;
+  }
+  #authGate .auth-foot {
+    margin: 16px 0 0; font-size: 11px; color: #636366; line-height: 1.4;
+  }
+
   :root {
     /* ── L3 theme tokens (saved in presets) ── */
     --panel-top: #12305c;
@@ -100,9 +168,11 @@
     z-index: 20;
   }
   header h1 {
-    font-size: 15px; font-weight: 600; margin: 0;
+    font-size: 14px; font-weight: 650; margin: 0;
     letter-spacing: -0.02em;
   }
+  header .brand-block { min-width: 0; }
+  header .brand-block .tag { margin: 0; font-size: 11px; white-space: nowrap; }
   header .tag { color: var(--ui-muted); font-size: 12px; font-weight: 500; }
   header .spacer { flex: 1; }
   header button, .btn {
@@ -1481,7 +1551,72 @@
 
 </style>
 </head>
-<body class="mode-simple">
+<body class="mode-simple gate-locked">
+<div id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="auth-card">
+    <p class="auth-brand">VFXtraining AI Assist</p>
+    <h1 id="authTitle">Lower Third Studio</h1>
+    <p class="auth-sub">Private preview. Enter the access password to continue.</p>
+    <form id="authForm" autocomplete="on">
+      <label for="authPass">Password</label>
+      <input id="authPass" name="password" type="password" autocomplete="current-password" required autofocus />
+      <div class="auth-row">
+        <button type="submit">Unlock</button>
+      </div>
+      <p class="auth-err" id="authErr" aria-live="polite"></p>
+    </form>
+    <p class="auth-foot">City of Aventura package · For authorized use only. This gate is a shared-link control, not full encryption.</p>
+  </div>
+</div>
+<script>
+(function () {
+  // Client-side gate for shared Pages link. SHA-256("L3Dstudio")
+  var GATE_HASH = "77517109a49437f4a5c47501bb4a90fea95279ca199a346b8131994cf8c68cf3";
+  var GATE_KEY = "vfxtraining.aiAssist.l3.unlocked.v1";
+  function unlock() {
+    document.body.classList.remove("gate-locked");
+    document.body.classList.add("gate-unlocked");
+    try { sessionStorage.setItem(GATE_KEY, "1"); } catch (e) {}
+  }
+  function already() {
+    try { return sessionStorage.getItem(GATE_KEY) === "1"; } catch (e) { return false; }
+  }
+  async function sha256hex(text) {
+    if (window.crypto && crypto.subtle) {
+      var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(function (b) {
+        return b.toString(16).padStart(2, "0");
+      }).join("");
+    }
+    // Fallback: direct compare only if SubtleCrypto missing (file:// rare cases)
+    return text === "L3Dstudio" ? GATE_HASH : "";
+  }
+  if (already()) {
+    unlock();
+  } else {
+    document.addEventListener("DOMContentLoaded", function () {
+      var form = document.getElementById("authForm");
+      var input = document.getElementById("authPass");
+      var err = document.getElementById("authErr");
+      if (!form) return;
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var pw = (input && input.value) || "";
+        sha256hex(pw).then(function (hex) {
+          if (hex === GATE_HASH || pw === "L3Dstudio") {
+            if (err) err.textContent = "";
+            unlock();
+          } else {
+            if (err) err.textContent = "Incorrect password.";
+            if (input) { input.value = ""; input.focus(); }
+          }
+        });
+      });
+      if (input) setTimeout(function () { input.focus(); }, 50);
+    });
+  }
+})();
+</script>
 
 <div id="wizard" aria-modal="true" role="dialog" aria-label="Design wizard">
   <div class="wiz-top">
@@ -1499,8 +1634,10 @@
 </div>
 
 <header>
-  <h1>Lower Third Studio</h1>
-  <span class="tag tag-long">City of Aventura · Design</span>
+  <div class="brand-block" style="display:flex;flex-direction:column;gap:2px;min-width:0">
+    <h1 style="margin:0">VFXtraining AI Assist</h1>
+    <span class="tag tag-long" style="margin:0">Lower Third Studio · City of Aventura</span>
+  </div>
   <div class="spacer"></div>
   <button type="button" class="btn-wiz primary" id="btnNewDesign">New Design</button>
   <div class="mode-toggle" title="Simple = fast results · Advanced = full controls">
@@ -8467,9 +8604,9 @@ window.L3Studio = {
     const st = this.getState();
     const n = (typeof people !== "undefined" && people) ? people.length : 0;
     return [
-      "Lower Third Studio v" + this.version,
+      "VFXtraining AI Assist · Lower Third Studio v" + this.version,
       "Mission: design (wizard/preset) → render animated PNG sequences (alpha) → import DaVinci Resolve.",
-      "Open: this HTML file in Chrome, or https://vfxtraining-hub.github.io/lower-third-studio-web/",
+      "Open: this HTML file in Chrome, or https://vfxtraining-hub.github.io/lower-third-studio-web/ (password-gated)",
       "Docs: ai/OPERATOR_PROMPT.md, llms.txt, AGENTS.md, ai/workflows/resolve.md",
       "People loaded: " + n,
       "Mode: " + st.mode + " · Preset: " + (st.presetName || "—") + " · Aspect: " + st.aspect,
@@ -8626,7 +8763,7 @@ window.L3Studio = {
     const st = this.getState();
     this._lastJob = {
       version: "1.0.0",
-      app: "Lower Third Studio",
+      app: "VFXtraining AI Assist · Lower Third Studio",
       createdAt: new Date().toISOString(),
       deliver: partial.deliver || st.deliver,
       fps: partial.fps ?? st.fps,

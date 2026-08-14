@@ -1,16 +1,20 @@
-# Lower Third Studio
+# VFXtraining AI Assist — Lower Third Studio
 > Self-contained broadcast lower-third designer (City of Aventura). Animated PNG sequences with alpha for Resolve / AE / FCP.
+
+## Product
+- **Product:** VFXtraining AI Assist
+- **Module:** Lower Third Studio
 
 ## Primary entry
 - Local: Lower_Third_Studio.html (open in Chrome)
-- Web: https://vfxtraining-hub.github.io/lower-third-studio-web/
+- Web: https://vfxtraining-hub.github.io/lower-third-studio-web/ (password-gated; authorized users only)
 - AI operator prompt: ai/OPERATOR_PROMPT.md
 - Agents map: AGENTS.md
 - Machine API schema: ai/machine-api.json
-- In-page API: window.L3Studio (after load)
+- In-page API: window.L3Studio (after unlock + load)
 
 ## What an AI should do
-1. Open the HTML app
+1. Open the HTML app (enter access password when prompted on the web build)
 2. Run wizard or apply preset (includes logo)
 3. Export ALL titles as PNG sequence ZIPs (default full animation + motion blur)
 4. Unpack to a folder
@@ -20,6 +24,7 @@
 - Simple mode (default): person list, presets, Download animation / Download all
 - New Design: wizard Source → Logo → Colors → Fonts → Design → Motion → Done
 - Advanced: colors, type, timing, WebM, stills, logo sequence loader
+- Style library: Civic Gold · Aventura Dual (full titles, uniform 9:16 scale)
 
 ## Export defaults (do not downgrade)
 - deliver: pngseq (ZIP of PNG frames + alpha)
@@ -27,22 +32,3 @@
 - mbSamples: 16
 - logoPlayMode: once
 - resolution: 1920x1080 (or 1080x1920 for 9:16)
-
-## Machine API (browser console / automation)
-L3Studio.describeForAI()
-L3Studio.getState()
-L3Studio.getPeople()
-L3Studio.setExportDefaults({deliver:"pngseq", mbSamples:16, fps:24})
-await L3Studio.renderAll({download:true})
-L3Studio.getLastJobManifest()
-
-## Resolve
-scripts/unpack_l3_exports.py
-scripts/import_l3_to_resolve.py --source <folder> --bin L3_Aventura --timeline "L3 Titles" --fps 24
-MCP: resolve_status → import_media → create_timeline/open_timeline → append_clips
-
-## Optional docs
-ai/README.md
-ai/workflows/resolve.md
-ai/workflows/browser-automation.md
-ai/workflows/generic-nle.md

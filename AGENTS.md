@@ -1,10 +1,12 @@
-# AGENTS.md — Lower Third Studio
+# AGENTS.md — VFXtraining AI Assist · Lower Third Studio
 
 Instructions for any coding / operator agent working in this repo.
 
 ## Product
 
-**Lower Third Studio** is a single-file HTML broadcast graphics tool. Default brand: City of Aventura 30-year package. Output: full-frame **animated PNG sequences with alpha** for NLE overlay (Resolve first).
+**VFXtraining AI Assist** hosts **Lower Third Studio** — a single-file HTML broadcast graphics tool. Default brand: City of Aventura 30-year package. Output: full-frame **animated PNG sequences with alpha** for NLE overlay (Resolve first).
+
+Public Pages URL is password-gated (client-side) for authorized preview only.
 
 | Path | Role |
 |------|------|
