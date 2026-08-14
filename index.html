@@ -11,7 +11,9 @@
 <meta name="ai-operator" content="ai/OPERATOR_PROMPT.md" />
 <meta name="ai-api" content="window.L3Studio" />
 <meta name="ai-api-schema" content="ai/machine-api.json" />
-<meta name="ai-version" content="1.0.0" />
+<meta name="ai-version" content="1.1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
 <link rel="alternate" type="text/plain" title="llms.txt" href="llms.txt" />
 <link rel="alternate" type="text/markdown" title="AGENTS" href="AGENTS.md" />
 <link rel="alternate" type="application/json" title="L3Studio Machine API" href="ai/machine-api.json" />
@@ -1707,17 +1709,58 @@
 </header>
 
 <aside>
-  <p class="simple-hero-hint">Select a person, preview on the stage, then <b>Download animation</b>. Switch <b>Style</b> for package looks. Use <b>New Design</b> for a custom build.</p>
+  <p class="simple-hero-hint">Pick a person → <b>Render</b> (full animated PNG) → <b>Build Fusion template</b>. Style library switches Civic / Dual looks.</p>
+
+  <!-- TOP: primary workflow — hard to miss -->
+  <div class="sec render-pack" id="renderPackPanel" style="margin-bottom:12px;border:1px solid rgba(10,132,255,0.45);background:rgba(10,132,255,0.08);border-radius:12px;padding:12px">
+    <h2 style="color:#6cb6ff">Render &amp; package</h2>
+    <p class="hint" style="margin:0 0 10px">
+      Full <b>PNG animation</b> sequences. Then build Fusion for Resolve
+      (Person · Style · Vice Mayor · ID under playhead).
+    </p>
+    <label class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row;margin-bottom:8px">
+      <input type="checkbox" id="renderBothStyles" checked />
+      <span>Render <b>both styles</b> (Civic Gold + Aventura Dual)</span>
+    </label>
+    <div class="stack-btns">
+      <button type="button" class="btn" id="btnRenderThisPack" style="flex:1" title="Selected person · current or both styles">Render this title</button>
+      <button type="button" class="btn" id="btnRenderAllPack" style="flex:1" title="Every person · current or both styles">Render all titles</button>
+    </div>
+    <div class="stack-btns" style="margin-top:6px">
+      <button type="button" class="btn ghost" id="btnBuildFusionPack" style="flex:1">Build Fusion template…</button>
+      <button type="button" class="btn ghost" id="btnInstallResolveTools" style="flex:1" title="Download Resolve ID-person script + packager">Resolve tools…</button>
+    </div>
+    <progress id="renderPackProg" hidden style="width:100%;margin-top:8px"></progress>
+    <div class="render-pack-log" id="renderPackLog" aria-live="polite"></div>
+    <p class="hint" id="renderPackStatus" style="margin:8px 0 0">Each person also has a <b>Render</b> button. After downloads → Build Fusion.</p>
+  </div>
 
   <div class="sec" style="margin-bottom:10px">
     <h2>Style library</h2>
     <div class="style-lib" id="styleLib"></div>
-    <p class="hint" style="margin:0">Animated logo always uses <b>play once → hold last</b> unless you change it in Advanced.</p>
+    <p class="hint" style="margin:0">Logo plays once → hold. Switch Civic / Dual before rendering.</p>
   </div>
 
-  <div class="sec pkg-tools" id="pkgTools" style="margin-bottom:12px">
-    <h2>Package size &amp; position</h2>
-    <p class="hint" style="margin:0 0 10px">Scales and moves the <b>whole</b> lower third for <b>every person</b> in this style. Live preview · saved with the template.</p>
+  <div class="sec" style="margin-bottom:8px">
+    <h2>People <span id="count" class="tag"></span></h2>
+    <input type="search" class="simple-search" id="peopleSearch" placeholder="Search name or title…" autocomplete="off" style="margin-bottom:8px" />
+    <div class="people" id="peopleList"></div>
+  </div>
+
+  <label class="simple-vm" id="simpleVmRow">
+    <input type="checkbox" id="simpleViceMayor" />
+    <span><b>Vice Mayor</b> title for selected</span>
+  </label>
+
+  <div class="stack-btns" style="margin-bottom:8px;margin-top:8px">
+    <button type="button" class="btn" id="btnLiveUpdate" style="flex:1" title="Re-fetch names & titles from the source website">↻ Live update from source</button>
+  </div>
+  <p class="hint" id="liveUpdateStatus" style="margin-top:-4px;margin-bottom:8px">Pulls latest from cityofaventura.com (keeps VM + nickname overrides).</p>
+
+  <details class="sec pkg-tools" id="pkgTools" style="margin-bottom:12px">
+    <summary style="cursor:pointer;font-size:11px;font-weight:650;letter-spacing:0.06em;text-transform:uppercase;color:var(--ui-muted)">Package size &amp; position</summary>
+    <div style="margin-top:10px">
+    <p class="hint" style="margin:0 0 10px">Scales and moves the <b>whole</b> lower third for <b>every person</b> in this style.</p>
     <label class="field">Size <span id="pkgScaleVal" style="float:right;color:var(--ui-muted)">72%</span>
       <input type="range" id="pkgScale" min="0.40" max="1.15" step="0.01" value="0.72" />
     </label>
@@ -1740,19 +1783,8 @@
       <button type="button" class="btn ghost" id="pkgReset" style="flex:1">Reset</button>
     </div>
     <p class="hint" id="pkgStatus" style="margin:8px 0 0">Applies to all titles using the active style (Civic / Dual).</p>
-  </div>
-
-  <input type="search" class="simple-search" id="peopleSearch" placeholder="Search name or title…" autocomplete="off" />
-
-  <div class="stack-btns" style="margin-bottom:8px">
-    <button type="button" class="btn" id="btnLiveUpdate" style="flex:1" title="Re-fetch names & titles from the source website">↻ Live update from source</button>
-  </div>
-  <p class="hint" id="liveUpdateStatus" style="margin-top:-4px;margin-bottom:8px">Pulls latest people from cityofaventura.com (keeps Vice Mayor + nickname overrides).</p>
-
-  <label class="simple-vm" id="simpleVmRow">
-    <input type="checkbox" id="simpleViceMayor" />
-    <span><b>Vice Mayor</b> title for selected</span>
-  </label>
+    </div>
+  </details>
 
   <div class="simple-preset-bar" id="simplePresetBar">
     <h2>Presets</h2>
@@ -1767,35 +1799,7 @@
         <input type="file" id="fileSimplePreset" accept="application/json,.json,.l3preset.json" hidden />
       </label>
     </div>
-    <p class="hint" style="margin-top:8px;margin-bottom:0">Switch looks here. Wizard designs land in this list. Advanced has full manage / export.</p>
-  </div>
-
-  <div class="sec render-pack" id="renderPackPanel" style="margin-bottom:12px">
-    <h2>Render &amp; package</h2>
-    <p class="hint" style="margin:0 0 10px">
-      One click = <b>full PNG animation</b> download. Then build the Fusion title for Resolve
-      (Person · Style · Vice Mayor · <b>ID person under playhead</b>).
-    </p>
-    <label class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row;margin-bottom:8px">
-      <input type="checkbox" id="renderBothStyles" checked />
-      <span>Render <b>both styles</b> (Civic Gold + Aventura Dual)</span>
-    </label>
-    <div class="stack-btns">
-      <button type="button" class="btn" id="btnRenderThisPack" style="flex:1" title="Selected person · current or both styles">Render this title</button>
-      <button type="button" class="btn" id="btnRenderAllPack" style="flex:1" title="Every person · current or both styles">Render all titles</button>
-    </div>
-    <div class="stack-btns" style="margin-top:6px">
-      <button type="button" class="btn ghost" id="btnBuildFusionPack" style="flex:1">Build Fusion template…</button>
-      <button type="button" class="btn ghost" id="btnInstallResolveTools" style="flex:1" title="Download Resolve ID-person script + packager">Resolve tools…</button>
-    </div>
-    <progress id="renderPackProg" hidden style="width:100%;margin-top:8px"></progress>
-    <div class="render-pack-log" id="renderPackLog" aria-live="polite"></div>
-    <p class="hint" id="renderPackStatus" style="margin:8px 0 0">Use ▶ on each person, or Render all. After downloads: Build Fusion template.</p>
-  </div>
-
-  <div class="sec" style="margin-bottom:8px">
-    <h2>People <span id="count" class="tag"></span></h2>
-    <div class="people" id="peopleList"></div>
+    <p class="hint" style="margin-top:8px;margin-bottom:0">Wizard designs land here.</p>
   </div>
 
   <div class="sec onair-tools" id="onAirTools" style="margin-bottom:12px">
@@ -1887,7 +1891,10 @@
 
 <main class="stage-wrap">
   <div class="simple-bar">
-    <button type="button" class="btn-primary" id="btnDlOneSimple">Download animation</button>
+    <button type="button" class="btn-primary" id="btnRenderThisPackBar" title="Render selected person PNG sequence">Render this</button>
+    <button type="button" class="btn-primary" id="btnRenderAllPackBar" title="Render all people PNG sequences" style="background:#0a84ff">Render all</button>
+    <button type="button" class="btn-sec" id="btnBuildFusionBar" title="Download Fusion packager">Fusion template</button>
+    <button type="button" class="btn-sec" id="btnDlOneSimple">Download animation</button>
     <button type="button" class="btn-sec" id="btnDlBatchSimple">Download all animations</button>
     <button type="button" class="btn-sec" id="btnPlaySimple">Preview play</button>
     <button type="button" class="btn-sec" id="btnPreviewAnimSimple">In → Out</button>
@@ -5504,66 +5511,64 @@ read -r _
 }
 
 function wireRenderPackUI() {
-  const thisBtn = $("btnRenderThisPack");
-  const allBtn = $("btnRenderAllPack");
-  const fusBtn = $("btnBuildFusionPack");
-  const toolsBtn = $("btnInstallResolveTools");
-  if (thisBtn && !thisBtn._wired) {
-    thisBtn._wired = true;
-    thisBtn.onclick = async () => {
-      thisBtn.disabled = true;
-      try {
-        await renderPackPerson(selected(), { bothStyles: !!$("renderBothStyles")?.checked });
-        if (confirm("Render done.\n\nBuild Fusion template now?")) downloadFusionPackager();
-      } catch (e) {
-        packLog("Error: " + (e.message || e));
-        alert(e.message || e);
-      }
-      thisBtn.disabled = false;
-    };
-  }
-  if (allBtn && !allBtn._wired) {
-    allBtn._wired = true;
-    allBtn.onclick = async () => {
-      if (!confirm("Render FULL PNG animations for all people" +
-        ($("renderBothStyles")?.checked ? " × both styles (Civic + Dual)" : " (current style)") +
-        "?\n\nThis can take a while and will download large ZIP files.")) return;
-      allBtn.disabled = true;
-      try {
-        await renderPackAll({ bothStyles: !!$("renderBothStyles")?.checked });
-      } catch (e) {
-        packLog("Error: " + (e.message || e));
-        alert(e.message || e);
-      }
-      allBtn.disabled = false;
-    };
-  }
-  if (fusBtn && !fusBtn._wired) {
-    fusBtn._wired = true;
-    fusBtn.onclick = () => {
-      downloadFusionPackager();
-      alert(
-        "Downloaded Build_L3_Fusion_Template.command\n\n" +
-        "1) Finish any browser downloads (L3_*.zip)\n" +
-        "2) Double-click Build_L3_Fusion_Template.command\n" +
-        "3) Open Resolve → Effects → Titles → Aventura_L3_Animated_Switcher\n\n" +
-        "ID person: Workspace → Scripts → L3 Identify Person Under Playhead"
-      );
-    };
-  }
-  if (toolsBtn && !toolsBtn._wired) {
-    toolsBtn._wired = true;
-    toolsBtn.onclick = () => {
-      downloadResolveIdScript();
-      alert(
-        "Downloaded Install_L3_Resolve_Tools.command\n\n" +
-        "Double-click it once, then in Resolve:\n" +
-        "Workspace → Scripts → L3 Identify Person Under Playhead\n\n" +
-        "Put the playhead on the speaker, select the L3 title (or leave it under the playhead).\n" +
-        "On success it sets Person (and Style if detectable) on the Fusion title."
-      );
-    };
-  }
+  const runThis = async (btn) => {
+    if (btn) btn.disabled = true;
+    try {
+      await renderPackPerson(selected(), { bothStyles: !!$("renderBothStyles")?.checked });
+      if (confirm("Render done.\n\nBuild Fusion template now?")) downloadFusionPackager();
+    } catch (e) {
+      packLog("Error: " + (e.message || e));
+      alert(e.message || e);
+    }
+    if (btn) btn.disabled = false;
+  };
+  const runAll = async (btn) => {
+    if (!confirm("Render FULL PNG animations for all people" +
+      ($("renderBothStyles")?.checked ? " × both styles (Civic + Dual)" : " (current style)") +
+      "?\n\nThis can take a while and will download large ZIP files.")) return;
+    if (btn) btn.disabled = true;
+    try {
+      await renderPackAll({ bothStyles: !!$("renderBothStyles")?.checked });
+    } catch (e) {
+      packLog("Error: " + (e.message || e));
+      alert(e.message || e);
+    }
+    if (btn) btn.disabled = false;
+  };
+  const runFusion = () => {
+    downloadFusionPackager();
+    alert(
+      "Downloaded Build_L3_Fusion_Template.command\n\n" +
+      "1) Finish any browser downloads (L3_*.zip)\n" +
+      "2) Double-click Build_L3_Fusion_Template.command\n" +
+      "3) Open Resolve → Effects → Titles → Aventura_L3_Animated_Switcher\n\n" +
+      "ID person: Workspace → Scripts → L3 Identify Person Under Playhead"
+    );
+  };
+  const runTools = () => {
+    downloadResolveIdScript();
+    alert(
+      "Downloaded Install_L3_Resolve_Tools.command\n\n" +
+      "Double-click it once, then in Resolve:\n" +
+      "Workspace → Scripts → L3 Identify Person Under Playhead\n\n" +
+      "Put the playhead on the speaker, select the L3 title (or leave it under the playhead).\n" +
+      "On success it sets Person (and Style if detectable) on the Fusion title."
+    );
+  };
+
+  const bind = (id, fn) => {
+    const el = $(id);
+    if (!el || el._wired) return;
+    el._wired = true;
+    el.onclick = () => fn(el);
+  };
+  bind("btnRenderThisPack", (el) => runThis(el));
+  bind("btnRenderAllPack", (el) => runAll(el));
+  bind("btnRenderThisPackBar", (el) => runThis(el));
+  bind("btnRenderAllPackBar", (el) => runAll(el));
+  bind("btnBuildFusionPack", () => runFusion());
+  bind("btnBuildFusionBar", () => runFusion());
+  bind("btnInstallResolveTools", () => runTools());
 }
 wireRenderPackUI();
 
