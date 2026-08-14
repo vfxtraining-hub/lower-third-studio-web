@@ -14,9 +14,24 @@ Public Pages URL is password-gated (client-side) for authorized preview only.
 | `web/index.html` | GitHub Pages copy |
 | `ai/` | AI operator package |
 | `llms.txt` | Short machine summary |
-| `scripts/` | Unpack + Resolve import |
+| `scripts/` | Unpack + Resolve import + Fusion switcher builder |
+| `fusion/` | Fusion Title: rendered L3 person switcher (+ VM) |
 | `people_cityofaventura.json` | Roster snapshot |
 | `logo_frames/` | Reference PNG logo sequence |
+
+### Render & package UX + Fusion + ID person
+
+**Studio (simple):** left panel **Render & package**
+- **Render** on each person · **Render this title** · **Render all titles**
+- Checkbox **both styles** (Civic + Dual)
+- **Build Fusion template…** → `Build_L3_Fusion_Template.command` (unpack + install title)
+- **Resolve tools…** → installs **L3 Identify Person Under Playhead**
+
+**Resolve:** Effects → Titles → **Aventura_L3_Animated_Switcher**  
+Controls: Person · Style · Vice Mayor · Opacity  
+**ID person:** Workspace → Scripts → L3 Identify Person Under Playhead (matches clip/marker name under playhead → sets Person).
+
+CLI fallback: `scripts/build_fusion_l3_switcher.py`, `scripts/id_person_under_playhead.py` · see `fusion/README.md`.
 
 ## Do this first
 

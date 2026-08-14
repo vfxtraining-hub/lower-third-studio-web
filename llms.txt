@@ -32,3 +32,9 @@
 - mbSamples: 16
 - logoPlayMode: once
 - resolution: 1920x1080 (or 1080x1920 for 9:16)
+
+## Fusion (Resolve Titles) — animated sequences only
+- Export PNG sequences for **both** styles (Civic Gold + Aventura Dual), not stills
+- Build: `python3 scripts/build_fusion_l3_switcher.py --media ~/Movies/L3_Aventura_Exports --install`
+- Controls: Person · Style (Civic|Dual) · Vice Mayor · Opacity
+- Naming: `L3_{id}_{name}_{styleId}_{animStyle}/` · VM: `_vm_`

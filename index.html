@@ -248,6 +248,43 @@
     background: var(--ui-accent-soft);
     box-shadow: 0 0 0 1px rgba(10,132,255,0.25);
   }
+  .person {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+  .person .person-main { min-width: 0; text-align: left; }
+  .person .person-main .n { font-weight: 600; font-size: 13px; }
+  .person .person-main .t { font-size: 11px; color: var(--ui-muted); margin-top: 2px; }
+  .person .person-main .g { font-size: 10px; color: var(--ui-muted); margin-top: 2px; opacity: 0.85; }
+  .person .btn-render-one {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 8px;
+    border: 1px solid var(--ui-line-strong);
+    background: rgba(10,132,255,0.18);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .person .btn-render-one:hover { background: rgba(10,132,255,0.35); }
+  .person .btn-render-one:disabled { opacity: 0.45; cursor: wait; }
+  .render-pack-log {
+    margin-top: 8px;
+    max-height: 120px;
+    overflow: auto;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--ui-muted);
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    white-space: pre-wrap;
+  }
+  .render-pack-log:empty { display: none; }
   .person .n { font-weight: 600; letter-spacing: -0.01em; }
   .person .t { color: var(--ui-muted); font-size: 11px; margin-top: 3px; }
   .person .g { color: var(--accent); font-size: 10px; margin-top: 3px; font-weight: 600; }
@@ -1731,6 +1768,29 @@
       </label>
     </div>
     <p class="hint" style="margin-top:8px;margin-bottom:0">Switch looks here. Wizard designs land in this list. Advanced has full manage / export.</p>
+  </div>
+
+  <div class="sec render-pack" id="renderPackPanel" style="margin-bottom:12px">
+    <h2>Render &amp; package</h2>
+    <p class="hint" style="margin:0 0 10px">
+      One click = <b>full PNG animation</b> download. Then build the Fusion title for Resolve
+      (Person · Style · Vice Mayor · <b>ID person under playhead</b>).
+    </p>
+    <label class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row;margin-bottom:8px">
+      <input type="checkbox" id="renderBothStyles" checked />
+      <span>Render <b>both styles</b> (Civic Gold + Aventura Dual)</span>
+    </label>
+    <div class="stack-btns">
+      <button type="button" class="btn" id="btnRenderThisPack" style="flex:1" title="Selected person · current or both styles">Render this title</button>
+      <button type="button" class="btn" id="btnRenderAllPack" style="flex:1" title="Every person · current or both styles">Render all titles</button>
+    </div>
+    <div class="stack-btns" style="margin-top:6px">
+      <button type="button" class="btn ghost" id="btnBuildFusionPack" style="flex:1">Build Fusion template…</button>
+      <button type="button" class="btn ghost" id="btnInstallResolveTools" style="flex:1" title="Download Resolve ID-person script + packager">Resolve tools…</button>
+    </div>
+    <progress id="renderPackProg" hidden style="width:100%;margin-top:8px"></progress>
+    <div class="render-pack-log" id="renderPackLog" aria-live="polite"></div>
+    <p class="hint" id="renderPackStatus" style="margin:8px 0 0">Use ▶ on each person, or Render all. After downloads: Build Fusion template.</p>
   </div>
 
   <div class="sec" style="margin-bottom:8px">
@@ -3311,19 +3371,44 @@ function renderList() {
   list.innerHTML = "";
   $("count").textContent = `(${people.length})`;
   for (const p of people) {
-    const b = document.createElement("button");
-    b.type = "button";
+    const b = document.createElement("div");
     b.className = "person" + (p.id === selectedId ? " active" : "");
-    b.innerHTML = `<div class="n"></div><div class="t"></div><div class="g"></div>`;
+    b.setAttribute("role", "button");
+    b.tabIndex = 0;
+    b.innerHTML = `<div class="person-main"><div class="n"></div><div class="t"></div><div class="g"></div></div>
+      <button type="button" class="btn-render-one" data-render-id="${p.id}" title="Render PNG sequence for this person">Render</button>`;
     ensureBaseTitle(p);
     const onAir = (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
     b.querySelector(".n").textContent = onAir + (p.viceMayor ? "  ★" : "");
     b.querySelector(".t").textContent = displayTitle(p);
     b.querySelector(".g").textContent = (p.group || "") + (p.viceMayor ? " · Vice Mayor" : "");
-    b.onclick = () => {
+    const select = () => {
       selectedId = p.id;
       renderList();
       playIn();
+    };
+    b.querySelector(".person-main").onclick = select;
+    b.onkeydown = (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(); }
+    };
+    const rb = b.querySelector(".btn-render-one");
+    rb.onclick = async (ev) => {
+      ev.stopPropagation();
+      selectedId = p.id;
+      renderList();
+      if (typeof renderPackPerson === "function") {
+        rb.disabled = true;
+        rb.textContent = "…";
+        try {
+          await renderPackPerson(p, { bothStyles: !!$("renderBothStyles")?.checked });
+          rb.textContent = "✓";
+          setTimeout(() => { rb.textContent = "Render"; rb.disabled = false; }, 1200);
+        } catch (e) {
+          rb.textContent = "!";
+          rb.disabled = false;
+          packLog("Error: " + (e.message || e));
+        }
+      }
     };
     list.appendChild(b);
   }
@@ -4431,7 +4516,8 @@ async function generateOne(person, { download = false, force = true } = {}) {
   $("statusPill").textContent = "Generating: " + person.name;
   const canvas = await renderPersonToCanvas(person);
   const blob = await canvasToBlob(canvas);
-  const filename = `L3_${slugify(person.id || person.name)}_${slugify(person.name)}.png`;
+  const vmTag = person.viceMayor ? "_vm" : "";
+  const filename = `L3_${slugify(person.id || person.name)}_${slugify(person.name)}${vmTag}.png`;
   const url = URL.createObjectURL(blob);
   const rec = { blob, url, filename, personId: person.id, ts: Date.now(), w: canvas.width, h: canvas.height };
   if (generatedCache.has(person.id)) {
@@ -5090,7 +5176,12 @@ async function renderAnimatedTitle(person, { download = true } = {}) {
     }
   }
 
-  const base = `L3_${slugify(person.id || person.name)}_${slugify(person.name)}_${timing.style}`;
+  // Tag Vice Mayor + package style so Fusion switcher can pick Civic vs Dual sequences
+  const vmTag = person && person.viceMayor ? "_vm" : "";
+  const styleTag = slugify(
+    (typeof activeStyleId !== "undefined" && activeStyleId) || timing.style || "style"
+  );
+  const base = `L3_${slugify(person.id || person.name)}_${slugify(person.name)}${vmTag}_${styleTag}_${timing.style}`;
 
   if (deliver === "pngseq") {
     const files = frames.map((blob, i) => ({
@@ -5099,7 +5190,7 @@ async function renderAnimatedTitle(person, { download = true } = {}) {
     }));
     // also write a short readme in zip
     const readme = new Blob([
-      `Lower third animation\nPerson: ${person.name}\nTitle: ${person.title}\nStyle: ${timing.style}\nFPS: ${fps}\nFrames: ${totalFrames}\nMotion blur samples: ${timing.mb}\nShutter: ${timing.shutter}\nResolution: ${W}x${H}\nImport PNG sequence into Resolve/AE at ${fps} fps.\n`
+      `Lower third animation\nPerson: ${person.name}\nTitle: ${(typeof displayTitle === "function" ? displayTitle(person) : person.title) || ""}\nViceMayor: ${person.viceMayor ? "yes" : "no"}\nStyle: ${timing.style}\nFPS: ${fps}\nFrames: ${totalFrames}\nMotion blur samples: ${timing.mb}\nShutter: ${timing.shutter}\nResolution: ${W}x${H}\nImport PNG sequence into Resolve/AE at ${fps} fps.\nFusion switcher: scripts/build_fusion_l3_switcher.py\n`
     ], { type: "text/plain" });
     files.push({ name: `${base}/README.txt`, blob: readme });
     if (download) {
@@ -5251,6 +5342,237 @@ function wireAnimButtons() {
   }
 }
 wireAnimButtons();
+
+/* ── Simple Render & package UX (PNG seq → Fusion) ── */
+function packLog(msg) {
+  const el = $("renderPackLog");
+  if (!el) { console.log("[pack]", msg); return; }
+  el.textContent += (el.textContent ? "\n" : "") + msg;
+  el.scrollTop = el.scrollHeight;
+}
+function packStatus(msg) {
+  if ($("renderPackStatus")) $("renderPackStatus").textContent = msg;
+  if ($("statusPill")) $("statusPill").textContent = msg;
+}
+
+async function ensurePngSeqDefaults() {
+  if ($("animDeliver")) $("animDeliver").value = "pngseq";
+  if ($("mbSamples") && !$("mbSamples").value) $("mbSamples").value = "16";
+  if ($("animFps") && !$("animFps").value) $("animFps").value = "24";
+}
+
+/** Render one person as PNG sequence zip for the active style. */
+async function renderPackPerson(person, { bothStyles = false } = {}) {
+  if (!person) person = selected();
+  if (!person) throw new Error("No person selected");
+  await ensurePngSeqDefaults();
+  const styles = bothStyles
+    ? ["civic", "aventura-dual"]
+    : [(typeof activeStyleId !== "undefined" && activeStyleId) || "civic"];
+  const results = [];
+  for (const sid of styles) {
+    if (typeof applyStyleLibrary === "function") {
+      applyStyleLibrary(sid, { play: false });
+    }
+    selectedId = person.id;
+    if (typeof renderPerson === "function") renderPerson();
+    packLog(`→ ${person.name} · ${sid}`);
+    packStatus(`Rendering ${person.name} (${sid})…`);
+    const res = await renderAnimatedTitle(person, { download: true });
+    results.push({ style: sid, res, personId: person.id, name: person.name });
+    packLog(`  ✓ ${res?.base || "done"} (${res?.type || "?"})`);
+  }
+  packStatus(`Done: ${person.name}`);
+  window.__l3LastPack = { at: Date.now(), results };
+  return results;
+}
+
+/** Render every person · optional both styles. */
+async function renderPackAll({ bothStyles = false } = {}) {
+  await ensurePngSeqDefaults();
+  const list = people || [];
+  if (!list.length) throw new Error("No people in roster");
+  const styles = bothStyles
+    ? ["civic", "aventura-dual"]
+    : [(typeof activeStyleId !== "undefined" && activeStyleId) || "civic"];
+  const prog = $("renderPackProg");
+  const total = list.length * styles.length;
+  if (prog) { prog.hidden = false; prog.max = total; prog.value = 0; }
+  if ($("renderPackLog")) $("renderPackLog").textContent = "";
+  packLog(`Render all · ${list.length} people · styles: ${styles.join(", ")}`);
+  let step = 0;
+  const allResults = [];
+  for (const sid of styles) {
+    if (typeof applyStyleLibrary === "function") applyStyleLibrary(sid, { play: false });
+    for (const p of list) {
+      selectedId = p.id;
+      if (typeof renderList === "function") renderList();
+      if (typeof renderPerson === "function") renderPerson();
+      packLog(`→ [${step + 1}/${total}] ${p.name} · ${sid}`);
+      packStatus(`Rendering ${step + 1}/${total}: ${p.name}`);
+      try {
+        const res = await renderAnimatedTitle(p, { download: true });
+        allResults.push({ style: sid, res, personId: p.id, name: p.name });
+        packLog(`  ✓ ${res?.base || "ok"}`);
+      } catch (e) {
+        packLog(`  ✗ ${e.message || e}`);
+      }
+      step++;
+      if (prog) prog.value = step;
+      // yield UI between people
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  }
+  if (prog) setTimeout(() => { prog.hidden = true; }, 800);
+  packStatus(`All renders finished · ${allResults.length} sequences`);
+  window.__l3LastPack = { at: Date.now(), results: allResults, all: true };
+  // Offer fusion build
+  if (allResults.length && confirm(
+    `Downloaded ${allResults.length} animation sequence(s).\n\nBuild the Fusion template now?\n(Downloads a double-click packager that unpacks + installs the title.)`
+  )) {
+    downloadFusionPackager();
+  }
+  return allResults;
+}
+
+function downloadFusionPackager() {
+  const studioPath = "/Users/yanshvalb/Desktop/Aventura_L3_Studio";
+  const mediaOut = "$HOME/Movies/L3_Aventura_Exports";
+  const body = `#!/bin/bash
+# VFXtraining AI Assist · package L3 animations + build Fusion title
+set -e
+STUDIO="${studioPath}"
+MEDIA="${mediaOut}"
+DOWNLOADS="$HOME/Downloads"
+echo "=== L3 Fusion packager ==="
+mkdir -p "$MEDIA"
+echo "Unpacking L3_*.zip from Downloads…"
+python3 "$STUDIO/scripts/unpack_l3_exports.py" "$DOWNLOADS" --out "$MEDIA" || true
+# Also copy any already-unzipped sequence folders from Downloads
+find "$DOWNLOADS" -maxdepth 2 -type d -name 'L3_*' 2>/dev/null | while read -r d; do
+  n=$(find "$d" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
+  if [ "\${n:-0}" -ge 12 ]; then
+    base=$(basename "$d")
+    if [ ! -d "$MEDIA/$base" ]; then
+      echo "  copy seq $base ($n frames)"
+      cp -R "$d" "$MEDIA/" || true
+    fi
+  fi
+done
+echo "Building Fusion animated switcher…"
+python3 "$STUDIO/scripts/build_fusion_l3_switcher.py" \\
+  --media "$MEDIA" \\
+  --people "$STUDIO/people_cityofaventura.json" \\
+  --min-frames 12 \\
+  --install
+echo ""
+echo "Done. In Resolve: Effects → Titles → Aventura_L3_Animated_Switcher"
+echo "Scripts menu: L3 Identify Person Under Playhead"
+echo "Press Enter to close."
+read -r _
+`;
+  const blob = new Blob([body], { type: "text/x-shellscript" });
+  downloadBlob(blob, "Build_L3_Fusion_Template.command");
+  packLog("Downloaded Build_L3_Fusion_Template.command");
+  packStatus("Double-click Build_L3_Fusion_Template.command (macOS may ask to allow)");
+  // also offer resolve tools
+  downloadResolveIdScript();
+}
+
+function downloadResolveIdScript() {
+  // Point user at repo script — also embed a thin launcher
+  const studioPath = "/Users/yanshvalb/Desktop/Aventura_L3_Studio";
+  const body = `#!/bin/bash
+# Install Resolve utility scripts for L3 identify-person
+set -e
+STUDIO="${studioPath}"
+DEST="$HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
+mkdir -p "$DEST"
+cp -f "$STUDIO/scripts/id_person_under_playhead.py" "$DEST/L3_Identify_Person_Under_Playhead.py"
+# Edit page scripts folder (varies by version)
+DEST2="$HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Comp"
+mkdir -p "$DEST2"
+cp -f "$STUDIO/scripts/id_person_under_playhead.py" "$DEST2/L3_Identify_Person_Under_Playhead.py"
+echo "Installed L3 Identify Person scripts."
+echo "Resolve → Workspace → Scripts → L3 Identify Person Under Playhead"
+echo "(Put playhead over picture of the speaker; select the L3 title clip or leave playhead on it.)"
+read -r _
+`;
+  const blob = new Blob([body], { type: "text/x-shellscript" });
+  downloadBlob(blob, "Install_L3_Resolve_Tools.command");
+  packLog("Downloaded Install_L3_Resolve_Tools.command");
+}
+
+function wireRenderPackUI() {
+  const thisBtn = $("btnRenderThisPack");
+  const allBtn = $("btnRenderAllPack");
+  const fusBtn = $("btnBuildFusionPack");
+  const toolsBtn = $("btnInstallResolveTools");
+  if (thisBtn && !thisBtn._wired) {
+    thisBtn._wired = true;
+    thisBtn.onclick = async () => {
+      thisBtn.disabled = true;
+      try {
+        await renderPackPerson(selected(), { bothStyles: !!$("renderBothStyles")?.checked });
+        if (confirm("Render done.\n\nBuild Fusion template now?")) downloadFusionPackager();
+      } catch (e) {
+        packLog("Error: " + (e.message || e));
+        alert(e.message || e);
+      }
+      thisBtn.disabled = false;
+    };
+  }
+  if (allBtn && !allBtn._wired) {
+    allBtn._wired = true;
+    allBtn.onclick = async () => {
+      if (!confirm("Render FULL PNG animations for all people" +
+        ($("renderBothStyles")?.checked ? " × both styles (Civic + Dual)" : " (current style)") +
+        "?\n\nThis can take a while and will download large ZIP files.")) return;
+      allBtn.disabled = true;
+      try {
+        await renderPackAll({ bothStyles: !!$("renderBothStyles")?.checked });
+      } catch (e) {
+        packLog("Error: " + (e.message || e));
+        alert(e.message || e);
+      }
+      allBtn.disabled = false;
+    };
+  }
+  if (fusBtn && !fusBtn._wired) {
+    fusBtn._wired = true;
+    fusBtn.onclick = () => {
+      downloadFusionPackager();
+      alert(
+        "Downloaded Build_L3_Fusion_Template.command\n\n" +
+        "1) Finish any browser downloads (L3_*.zip)\n" +
+        "2) Double-click Build_L3_Fusion_Template.command\n" +
+        "3) Open Resolve → Effects → Titles → Aventura_L3_Animated_Switcher\n\n" +
+        "ID person: Workspace → Scripts → L3 Identify Person Under Playhead"
+      );
+    };
+  }
+  if (toolsBtn && !toolsBtn._wired) {
+    toolsBtn._wired = true;
+    toolsBtn.onclick = () => {
+      downloadResolveIdScript();
+      alert(
+        "Downloaded Install_L3_Resolve_Tools.command\n\n" +
+        "Double-click it once, then in Resolve:\n" +
+        "Workspace → Scripts → L3 Identify Person Under Playhead\n\n" +
+        "Put the playhead on the speaker, select the L3 title (or leave it under the playhead).\n" +
+        "On success it sets Person (and Style if detectable) on the Fusion title."
+      );
+    };
+  }
+}
+wireRenderPackUI();
+
+// Expose for AI / console
+if (typeof window !== "undefined") {
+  window.renderPackPerson = renderPackPerson;
+  window.renderPackAll = renderPackAll;
+  window.downloadFusionPackager = downloadFusionPackager;
+}
 
 
 /* ── Logo playback: hold / once / loop / pingpong ── */
@@ -9081,15 +9403,19 @@ window.L3Studio = {
       "Export: " + st.deliver + " @ " + st.fps + "fps · MB×" + st.mbSamples + " · " + st.width + "x" + st.height,
       "Logo play: " + st.logoPlayMode,
       "",
-      "Quick path:",
+      "Quick path (simple UX):",
+      "  await renderPackAll({bothStyles:true})  // or Render all titles in UI",
+      "  downloadFusionPackager()                 // Build_L3_Fusion_Template.command",
+      "  Double-click packager → installs Aventura_L3_Animated_Switcher",
+      "  Resolve Scripts → L3 Identify Person Under Playhead (switches Person on title)",
+      "",
+      "Also:",
+      "  await renderPackPerson(person, {bothStyles:true})",
       "  L3Studio.setExportDefaults({deliver:'pngseq', mbSamples:16, fps:24})",
       "  await L3Studio.renderAll({download:true})",
-      "  L3Studio.downloadJobManifest()",
-      "  then: python3 scripts/unpack_l3_exports.py ~/Downloads --out ~/Movies/L3_Aventura_Exports",
-      "  then: python3 scripts/import_l3_to_resolve.py --source ~/Movies/L3_Aventura_Exports --timeline 'L3 Titles' --fps 24",
       "",
       "Wizard steps: Source → Logo → Colors → Fonts → Design → Motion → Done",
-      "UI: Simple (default) has presets + Download all; Advanced has full controls.",
+      "UI: Render & package panel · per-person Render · both styles · Fusion build",
       "Never default to still-only PNG unless the user asks.",
     ].join("\\n");
   },
