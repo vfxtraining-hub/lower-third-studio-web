@@ -807,7 +807,7 @@
           <option value="linear-rec709">Linear → Rec.709 display</option>
         </select>
       </label>
-      <p class="hint" id="logoSeqStatus">Auto: .exr = linear → sRGB; PNG/JPG/WebP = sRGB unless name contains “linear”.</p>
+      <p class="hint" id="logoSeqStatus">Auto: EXR linear→sRGB; 16-bit TIFF often linear→sRGB; 8-bit TIFF/PNG/JPG/WebP = sRGB.</p>
     </div>
 
     <label class="field" style="margin-top:10px">Logo animation
@@ -3368,21 +3368,64 @@ function sortSequenceFiles(fileList) {
   return files;
 }
 
+async function decodeTiffToCanvas(arrayBuffer, colorSpace, maxEdge = 512) {
+  if (typeof UTIF === "undefined") throw new Error("TIFF decoder not loaded");
+  const ifds = UTIF.decode(arrayBuffer);
+  if (!ifds || !ifds.length) throw new Error("No TIFF pages");
+  UTIF.decodeImage(arrayBuffer, ifds[0]);
+  const rgba = UTIF.toRGBA8(ifds[0]);
+  const w0 = ifds[0].width, h0 = ifds[0].height;
+  if (!w0 || !h0 || !rgba) throw new Error("Bad TIFF dimensions");
+  let tw = w0, th = h0;
+  if (Math.max(w0, h0) > maxEdge) {
+    const sc = maxEdge / Math.max(w0, h0);
+    tw = Math.max(1, Math.round(w0 * sc));
+    th = Math.max(1, Math.round(h0 * sc));
+  }
+  const src = document.createElement("canvas");
+  src.width = w0; src.height = h0;
+  const sctx = src.getContext("2d");
+  const img = sctx.createImageData(w0, h0);
+  img.data.set(rgba);
+  sctx.putImageData(img, 0, 0);
+  const c = document.createElement("canvas");
+  c.width = tw; c.height = th;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(src, 0, 0, tw, th);
+  const cs = colorSpace === "auto" ? "srgb" : colorSpace;
+  if (cs === "linear" || cs === "linear-rec709") {
+    return await convertFrameColorSpace(c, cs, maxEdge);
+  }
+  return await createImageBitmap(c);
+}
+
 async function fileToBitmapConverted(file, colorSpace) {
   const name = file.name || "";
   const isExr = /\.exr$/i.test(name);
+  const isTiff = /\.tiff?$/i.test(name) || (file.type && /tiff/i.test(file.type));
   if (isExr) {
     const buf = await file.arrayBuffer();
     const canvas = await decodeExrToCanvas(buf, 512);
-    // EXR path already applied linear→sRGB inside decoder
     return await createImageBitmap(canvas);
   }
-  // standard images
+  if (isTiff) {
+    const buf = await file.arrayBuffer();
+    let csUse = colorSpace === "auto" ? detectColorSpaceFromName(name) : colorSpace;
+    try {
+      if (colorSpace === "auto" && typeof UTIF !== "undefined") {
+        const ifds = UTIF.decode(buf.slice(0));
+        const bps = ifds[0] && (ifds[0].t258 || ifds[0].bitsPerSample);
+        const bit = Array.isArray(bps) ? bps[0] : bps;
+        if (bit && bit > 8) csUse = "linear";
+      }
+    } catch (_) {}
+    const out = await decodeTiffToCanvas(buf, csUse, 512);
+    return out instanceof ImageBitmap ? out : await createImageBitmap(out);
+  }
   const url = URL.createObjectURL(file);
   try {
     const img = await loadImage(url);
     const cs = colorSpace === "auto" ? detectColorSpaceFromName(name) : colorSpace;
-    // If auto/srgb for normal images, still allow linear convert if forced
     if (cs === "linear" || cs === "linear-rec709") {
       return await convertFrameColorSpace(img, cs, 512);
     }
@@ -3400,6 +3443,28 @@ async function urlToBitmapConverted(url, colorSpace) {
     const buf = await res.arrayBuffer();
     const canvas = await decodeExrToCanvas(buf, 512);
     return await createImageBitmap(canvas);
+  }
+  if (/\.tiff?(\?|$)/i.test(url)) {
+    let res;
+    try {
+      res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+    } catch (e) {
+      res = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
+      if (!res.ok) throw e;
+    }
+    const buf = await res.arrayBuffer();
+    let csUse = cs;
+    try {
+      if (colorSpace === "auto" && typeof UTIF !== "undefined") {
+        const ifds = UTIF.decode(buf.slice(0));
+        const bps = ifds[0] && (ifds[0].t258 || ifds[0].bitsPerSample);
+        const bit = Array.isArray(bps) ? bps[0] : bps;
+        if (bit && bit > 8) csUse = "linear";
+      }
+    } catch (_) {}
+    const canvas = await decodeTiffToCanvas(buf, csUse, 512);
+    return canvas instanceof ImageBitmap ? canvas : await createImageBitmap(canvas);
   }
   // try proxy if cors fails
   let blob;
