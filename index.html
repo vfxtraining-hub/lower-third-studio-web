@@ -5729,27 +5729,39 @@ read -r _
 }
 
 function downloadResolveIdScript() {
-  // Point user at repo script — also embed a thin launcher
+  // Browser downloads can't set +x; script self-chmods. Prefer studio copy when local.
   const studioPath = "/Users/yanshvalb/Desktop/Aventura_L3_Studio";
   const body = `#!/bin/bash
-# Install Resolve utility scripts for L3 identify-person
+# Install L3 Identify Person into Resolve script menus
 set -e
+chmod +x "$0" 2>/dev/null || true
+xattr -d com.apple.quarantine "$0" 2>/dev/null || true
 STUDIO="${studioPath}"
-DEST="$HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Utility"
-mkdir -p "$DEST"
-cp -f "$STUDIO/scripts/id_person_under_playhead.py" "$DEST/L3_Identify_Person_Under_Playhead.py"
-# Edit page scripts folder (varies by version)
-DEST2="$HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts/Comp"
-mkdir -p "$DEST2"
-cp -f "$STUDIO/scripts/id_person_under_playhead.py" "$DEST2/L3_Identify_Person_Under_Playhead.py"
-echo "Installed L3 Identify Person scripts."
-echo "Resolve → Workspace → Scripts → L3 Identify Person Under Playhead"
-echo "(Put playhead over picture of the speaker; select the L3 title clip or leave playhead on it.)"
+SRC="$STUDIO/scripts/id_person_under_playhead.py"
+if [ ! -f "$SRC" ]; then
+  echo "ERROR: missing $SRC"
+  echo "Open the studio from Desktop/Aventura_L3_Studio and try again."
+  read -r _; exit 1
+fi
+BASE="$HOME/Library/Application Support/Blackmagic Design/DaVinci Resolve/Fusion/Scripts"
+echo "=== Install L3 Resolve tools ==="
+for sub in Utility Comp Edit Deliver; do
+  mkdir -p "$BASE/$sub"
+  cp -f "$SRC" "$BASE/$sub/L3_Identify_Person_Under_Playhead.py"
+  echo "  OK  $sub/"
+done
+echo ""
+echo "Done. In Resolve: Workspace → Scripts → L3 Identify Person Under Playhead"
+echo "Playhead on speaker · L3 title on V2 · run script"
+echo "Press Enter to close."
 read -r _
 `;
   const blob = new Blob([body], { type: "text/x-shellscript" });
   downloadBlob(blob, "Install_L3_Resolve_Tools.command");
   packLog("Downloaded Install_L3_Resolve_Tools.command");
+  packLog("Tip: if double-click fails, run:  bash ~/Downloads/Install_L3_Resolve_Tools.command");
+  // Also refresh the always-executable copy in the package
+  packStatus("Installed to Resolve if you run the .command — or use scripts/Install_L3_Resolve_Tools.command");
 }
 
 function wireRenderPackUI() {
