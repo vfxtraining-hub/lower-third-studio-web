@@ -2,11 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#0e1116" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<link rel="manifest" href="./manifest.webmanifest" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Lower Third Studio — Aventura</title>
 <style>
   :root {
@@ -291,100 +287,256 @@
   }
 
 
+  /* ===== SIMPLE MODE (default) ===== */
+  body.mode-simple {
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 52px 1fr;
+  }
+  body.mode-simple .right,
+  body.mode-simple .adv-only,
+  body.mode-simple .tag-long {
+    display: none !important;
+  }
+  body.mode-simple aside {
+    border-right: 1px solid var(--ui-line);
+  }
+  body.mode-simple .people {
+    max-height: calc(100vh - 280px);
+  }
+  body.mode-simple main.stage-wrap {
+    grid-column: 2;
+  }
+  body.mode-simple .simple-bar {
+    display: flex !important;
+  }
+  body.mode-simple .toolbar-full {
+    display: none !important;
+  }
+
+  /* ===== ADVANCED MODE ===== */
+  body.mode-advanced {
+    grid-template-columns: 300px 1fr 300px;
+  }
+  body.mode-advanced .simple-bar {
+    display: none !important;
+  }
+  body.mode-advanced .toolbar-full {
+    display: flex !important;
+  }
+  body.mode-advanced .right,
+  body.mode-advanced .adv-only {
+    display: block !important;
+  }
+
+  .simple-bar {
+    display: none;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ui-line);
+    background: var(--ui-panel);
+  }
+  .simple-bar .btn-primary {
+    background: var(--ui-accent);
+    color: #fff;
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .simple-bar .btn-primary:hover { filter: brightness(1.08); }
+  .simple-bar .btn-sec {
+    background: transparent;
+    color: var(--ui-text);
+    border: 1px solid var(--ui-line);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .simple-bar .grow { flex: 1; }
+  .simple-search {
+    width: 100%;
+    margin-bottom: 8px;
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    border: 1px solid var(--ui-line);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13px;
+  }
+  .simple-vm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    background: var(--ui-bg);
+    border: 1px solid var(--ui-line);
+    border-radius: 8px;
+    font-size: 12px;
+  }
+  .simple-vm input { width: 16px; height: 16px; }
+  .mode-toggle {
+    display: inline-flex;
+    border: 1px solid var(--ui-line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .mode-toggle button {
+    background: transparent;
+    color: var(--ui-muted);
+    border: 0;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mode-toggle button.on {
+    background: var(--ui-accent);
+    color: #fff;
+  }
+  .simple-hero-hint {
+    font-size: 12px;
+    color: var(--ui-muted);
+    margin: 0 0 10px;
+    line-height: 1.35;
+  }
+  details.adv-fold {
+    border: 1px solid var(--ui-line);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: var(--ui-bg);
+  }
+  details.adv-fold > summary {
+    cursor: pointer;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 650;
+    color: var(--ui-text);
+    list-style: none;
+  }
+  details.adv-fold > summary::-webkit-details-marker { display: none; }
+  details.adv-fold[open] > summary {
+    border-bottom: 1px solid var(--ui-line);
+  }
+  details.adv-fold .fold-body { padding: 10px; }
+  .person .n .star { color: var(--accent); }
   @media (max-width: 900px) {
-    body {
+    body.mode-simple {
       grid-template-columns: 1fr !important;
-      grid-template-rows: auto auto auto auto !important;
-      height: auto !important;
-      overflow: auto !important;
-      min-height: 100dvh;
     }
-    header { flex-wrap: wrap; height: auto; padding: 10px 12px; gap: 8px; }
-    header button { font-size: 11px; padding: 8px 10px; }
-    aside, .right {
-      border: 0 !important;
-      max-height: none !important;
-      border-top: 1px solid var(--ui-line);
-    }
-    main.stage-wrap { min-height: 52vh; order: -1; }
-    .viewport { padding: 10px; }
-    .people { max-height: 240px !important; }
+    body.mode-simple main.stage-wrap { order: -1; min-height: 45vh; }
   }
 
 </style>
 </head>
-<body>
+<body class="mode-simple">
 <header>
   <h1>Lower Third Studio</h1>
-  <span class="tag">Source preset: cityofaventura.com · 30-Year logo (linear→sRGB baked)</span>
+  <span class="tag tag-long">cityofaventura.com · 30-Year logo</span>
   <div class="spacer"></div>
-  <button type="button" class="ghost" id="btnExportHtml">Export player HTML</button>
-  <button type="button" class="ghost" id="btnRegenOne">Regenerate</button>
-  <button type="button" id="btnDlOne">Download title</button>
-  <button type="button" id="btnDlBatch">Download all</button>
-  <button type="button" class="ghost" id="btnPlay">Play in</button>
+  <div class="mode-toggle" title="Simple = fast results · Advanced = full controls">
+    <button type="button" id="modeSimple" class="on">Simple</button>
+    <button type="button" id="modeAdvanced">Advanced</button>
+  </div>
+  <span class="pill" id="statusPill" style="margin-left:8px">Ready</span>
 </header>
 
 <aside>
-  <div class="sec">
-    <h2>People source</h2>
-    <label class="field">Source URL / note
-      <input type="url" id="sourceUrl" value="https://www.cityofaventura.com/200/City-Commission" />
-    </label>
-    <p class="hint">Browser CORS blocks live scrape of most civic sites. This build ships the commission + staff roster scraped from cityofaventura.com. Reload from CSV/JSON, or paste rows below.</p>
-    <div class="stack-btns">
-      <button type="button" class="btn ghost" id="btnLoadEmbedded">Load cityofaventura roster</button>
-      <label class="btn ghost" style="display:inline-block;cursor:pointer">
-        Import CSV/JSON
-        <input type="file" id="filePeople" accept=".csv,.json,text/csv,application/json" hidden />
-      </label>
-    </div>
-    <label class="field" style="margin-top:8px">Paste CSV (name,title[,group])
-      <textarea id="pastePeople" placeholder="Howard S. Weinberg, Esq.,Mayor · City of Aventura,City Commission"></textarea>
-    </label>
-    <button type="button" class="btn ghost" id="btnApplyPaste">Apply paste</button>
-  </div>
+  <p class="simple-hero-hint">Pick a person → preview → download. Open <b>Advanced</b> only when you need colors, fonts, animation, or batch tools.</p>
+  <input type="search" class="simple-search" id="peopleSearch" placeholder="Search name or title…" autocomplete="off" />
 
-  <div class="sec">
-    <h2>Roster <span id="count" class="tag"></span></h2>
+  <label class="simple-vm" id="simpleVmRow">
+    <input type="checkbox" id="simpleViceMayor" />
+    <span><b>Vice Mayor</b> title for selected</span>
+  </label>
+
+  <div class="sec" style="margin-bottom:8px">
+    <h2>People <span id="count" class="tag"></span></h2>
     <div class="people" id="peopleList"></div>
   </div>
 
-  <div class="sec">
-    <h2>Edit selected</h2>
-    <label class="field">Name<input type="text" id="editName" /></label>
-    <label class="field">Title (base)<input type="text" id="editTitle" /></label>
-    <label class="field">Group<input type="text" id="editGroup" /></label>
-    <div class="export-box" style="margin-bottom:8px">
-      <label class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row">
-        <input type="checkbox" id="editViceMayor" />
-        <span>Vice Mayor override</span>
-      </label>
-      <label class="field">Vice Mayor title form
-        <select id="editViceMayorForm">
-          <option value="short">Vice Mayor · City of Aventura</option>
-          <option value="full">Vice Mayor · Commissioner, Seat N · City of Aventura</option>
-          <option value="custom">Custom override text…</option>
-        </select>
-      </label>
-      <label class="field">Custom Vice Mayor title
-        <input type="text" id="editViceMayorCustom" placeholder="Vice Mayor · City of Aventura" />
-      </label>
-      <p class="hint">For commissioners (or anyone): when enabled, the on-air title becomes the Vice Mayor line instead of their base title. Base title is kept so you can toggle back.</p>
-    </div>
+  <div class="sec" style="margin-top:8px">
     <div class="stack-btns">
-      <button type="button" class="btn" id="btnApplyEdit">Update</button>
-      <button type="button" class="btn ghost" id="btnAddPerson">Add person</button>
-      <button type="button" class="btn ghost" id="btnDelPerson">Remove</button>
+      <button type="button" class="btn" id="btnPlay" style="flex:1">Play</button>
+      <button type="button" class="btn ghost" id="btnDlOne" style="flex:1">Download PNG</button>
     </div>
-    <div class="stack-btns" style="margin-top:6px">
-      <button type="button" class="btn ghost" id="btnClearAllVM">Clear all Vice Mayor overrides</button>
-    </div>
+  </div>
+
+  <div class="adv-only">
+    <details class="adv-fold" open>
+      <summary>Edit person</summary>
+      <div class="fold-body">
+        <label class="field">Name<input type="text" id="editName" /></label>
+        <label class="field">Title (base)<input type="text" id="editTitle" /></label>
+        <label class="field">Group<input type="text" id="editGroup" /></label>
+        <div class="export-box" style="margin-bottom:8px">
+          <label class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row">
+            <input type="checkbox" id="editViceMayor" />
+            <span>Vice Mayor override</span>
+          </label>
+          <label class="field">Vice Mayor title form
+            <select id="editViceMayorForm">
+              <option value="short">Vice Mayor · City of Aventura</option>
+              <option value="full">Vice Mayor · Commissioner, Seat N · City of Aventura</option>
+              <option value="custom">Custom override text…</option>
+            </select>
+          </label>
+          <label class="field">Custom Vice Mayor title
+            <input type="text" id="editViceMayorCustom" placeholder="Vice Mayor · City of Aventura" />
+          </label>
+        </div>
+        <div class="stack-btns">
+          <button type="button" class="btn" id="btnApplyEdit">Update</button>
+          <button type="button" class="btn ghost" id="btnAddPerson">Add</button>
+          <button type="button" class="btn ghost" id="btnDelPerson">Remove</button>
+        </div>
+        <div class="stack-btns" style="margin-top:6px">
+          <button type="button" class="btn ghost" id="btnClearAllVM">Clear all Vice Mayor overrides</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="adv-fold">
+      <summary>People source / import</summary>
+      <div class="fold-body">
+        <label class="field">Source URL / note
+          <input type="url" id="sourceUrl" value="https://www.cityofaventura.com/200/City-Commission" />
+        </label>
+        <p class="hint">Roster ships from cityofaventura.com. Import CSV/JSON or paste rows to replace.</p>
+        <div class="stack-btns">
+          <button type="button" class="btn ghost" id="btnLoadEmbedded">Reload city roster</button>
+          <label class="btn ghost" style="display:inline-block;cursor:pointer">
+            Import CSV/JSON
+            <input type="file" id="filePeople" accept=".csv,.json,text/csv,application/json" hidden />
+          </label>
+        </div>
+        <label class="field" style="margin-top:8px">Paste CSV (name,title[,group])
+          <textarea id="pastePeople" placeholder="Howard S. Weinberg, Esq.,Mayor · City of Aventura,City Commission"></textarea>
+        </label>
+        <button type="button" class="btn ghost" id="btnApplyPaste">Apply paste</button>
+      </div>
+    </details>
   </div>
 </aside>
 
 <main class="stage-wrap">
-  <div class="toolbar">
+  <div class="simple-bar">
+    <button type="button" class="btn-primary" id="btnDlOneSimple">Download PNG</button>
+    <button type="button" class="btn-sec" id="btnPlaySimple">Play animation</button>
+    <button type="button" class="btn-sec" id="btnPreviewAnimSimple">In → Out</button>
+    <button type="button" class="btn-sec" data-aspect="16x9">16:9</button>
+    <button type="button" class="btn-sec" data-aspect="9x16">9:16</button>
+    <button type="button" class="btn-sec" id="btnDlBatchSimple">Download all PNGs</button>
+    <div class="grow"></div>
+    <button type="button" class="btn-sec" id="btnOpenAdvanced">More controls…</button>
+  </div>
+  <div class="toolbar toolbar-full">
     <button type="button" class="btn ghost" data-aspect="16x9">16:9</button>
     <button type="button" class="btn ghost" data-aspect="9x16">9:16</button>
     <button type="button" class="btn ghost" id="btnChecker">Checker / Solid</button>
@@ -392,7 +544,11 @@
     <button type="button" class="btn ghost" id="btnReplayLogo">Replay logo</button>
     <button type="button" class="btn" id="btnGenOne">Generate PNG</button>
     <button type="button" class="btn ghost" id="btnGenBatch">Generate batch</button>
-    <span class="pill" id="statusPill">Ready</span>
+    <button type="button" class="btn ghost" id="btnDlOneAdv">Download title</button>
+    <button type="button" class="btn ghost" id="btnDlBatchAdv">Download all</button>
+    <button type="button" class="btn ghost" id="btnRegenOne">Regenerate</button>
+    <button type="button" class="btn ghost" id="btnExportHtml">Export player HTML</button>
+    <button type="button" class="btn ghost" id="btnPlayAdv">Play in</button>
   </div>
   <div class="viewport">
     <div class="stage" id="stage">
@@ -2994,6 +3150,121 @@ function wireViceMayorControls() {
   }
 }
 wireViceMayorControls();
+
+
+/* ── Simple / Advanced UX ── */
+function setAppMode(mode) {
+  const body = document.body;
+  const simple = mode !== "advanced";
+  body.classList.toggle("mode-simple", simple);
+  body.classList.toggle("mode-advanced", !simple);
+  const ms = $("modeSimple");
+  const ma = $("modeAdvanced");
+  if (ms) ms.classList.toggle("on", simple);
+  if (ma) ma.classList.toggle("on", !simple);
+  try { localStorage.setItem("l3studio.uiMode", simple ? "simple" : "advanced"); } catch (_) {}
+  if ($("statusPill")) {
+    $("statusPill").textContent = simple ? "Simple · pick → download" : "Advanced · full controls";
+  }
+  fitText?.();
+}
+
+function wireSimpleUx() {
+  $("modeSimple")?.addEventListener("click", () => setAppMode("simple"));
+  $("modeAdvanced")?.addEventListener("click", () => setAppMode("advanced"));
+  $("btnOpenAdvanced")?.addEventListener("click", () => setAppMode("advanced"));
+
+  // Alias simple buttons → existing handlers
+  const alias = (fromId, toId) => {
+    const a = $(fromId), b = $(toId);
+    if (a && b) a.addEventListener("click", () => b.click());
+  };
+  // After all handlers bound, wire aliases at end
+  $("btnDlOneSimple")?.addEventListener("click", () => {
+    const t = $("btnDlOne") || $("btnDlOne2") || $("btnGenOne");
+    if (t) t.click();
+    else if (typeof regenerateSelected === "function") regenerateSelected(true);
+  });
+  $("btnPlaySimple")?.addEventListener("click", () => {
+    if (typeof playIn === "function") playIn();
+    else $("btnPlay")?.click();
+  });
+  $("btnPreviewAnimSimple")?.addEventListener("click", () => {
+    if (typeof previewInOut === "function") previewInOut();
+    else $("btnPreviewAnim")?.click();
+  });
+  $("btnDlBatchSimple")?.addEventListener("click", () => {
+    const t = $("btnDlBatch") || $("btnDlBatch2");
+    if (t) t.click();
+    else if (typeof generateBatch === "function") generateBatch({ downloadZip: true });
+  });
+
+  // Search filter
+  const search = $("peopleSearch");
+  if (search && !search._wired) {
+    search._wired = true;
+    search.addEventListener("input", () => {
+      const q = search.value.trim().toLowerCase();
+      document.querySelectorAll("#peopleList .person").forEach((el) => {
+        const hay = (el.textContent || "").toLowerCase();
+        el.style.display = !q || hay.includes(q) ? "" : "none";
+      });
+    });
+  }
+
+  // Simple VM checkbox mirrors editViceMayor
+  const svm = $("simpleViceMayor");
+  if (svm && !svm._wired) {
+    svm._wired = true;
+    svm.addEventListener("change", () => {
+      const p = typeof selected === "function" ? selected() : null;
+      if (!p) return;
+      p.viceMayor = !!svm.checked;
+      if (!p.viceMayorForm) p.viceMayorForm = "short";
+      const ev = $("editViceMayor");
+      if (ev) ev.checked = p.viceMayor;
+      if (typeof renderList === "function") renderList();
+      if (typeof renderPerson === "function") renderPerson();
+      else {
+        $("titleEl").textContent = displayTitle(p);
+        fitText?.();
+      }
+      if (typeof playIn === "function") playIn();
+      persistState?.();
+    });
+  }
+
+  // Restore mode
+  let mode = "simple";
+  try { mode = localStorage.getItem("l3studio.uiMode") || "simple"; } catch (_) {}
+  setAppMode(mode);
+}
+
+// Keep simple VM checkbox in sync when selection changes
+const _renderPersonUx = typeof renderPerson === "function" ? renderPerson : null;
+if (_renderPersonUx) {
+  renderPerson = function() {
+    _renderPersonUx();
+    const p = selected?.();
+    const svm = $("simpleViceMayor");
+    if (svm && p) svm.checked = !!p.viceMayor;
+  };
+}
+
+wireSimpleUx();
+
+// Advanced toolbar aliases (IDs unique)
+["btnDlOneAdv","btnDlBatchAdv","btnPlayAdv"].forEach((id) => {
+  const el = $(id);
+  if (!el || el._aliased) return;
+  el._aliased = true;
+  el.addEventListener("click", () => {
+    if (id === "btnDlOneAdv") ($("btnDlOne") || $("btnDlOne2"))?.click() || (typeof regenerateSelected==="function" && regenerateSelected(true));
+    if (id === "btnDlBatchAdv") ($("btnDlBatch") || $("btnDlBatch2"))?.click() || (typeof generateBatch==="function" && generateBatch({downloadZip:true}));
+    if (id === "btnPlayAdv") (typeof playIn==="function" ? playIn() : $("btnPlay")?.click());
+  });
+});
+
 
 // initial play
 playIn();
