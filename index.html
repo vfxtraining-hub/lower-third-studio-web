@@ -631,12 +631,12 @@
     <label class="field">Logo animation
       <select id="logoPlayMode">
         <option value="hold">Freeze / hold last frame</option>
-        <option value="once">Play once → hold last</option>
-        <option value="loop" selected>Loop</option>
+        <option value="once" selected>Play once → hold last</option>
+        <option value="loop">Loop</option>
         <option value="pingpong">Ping pong</option>
       </select>
     </label>
-    <p class="hint" id="logoPlayHint">Loop continuously. Still exports can still use the hold frame checkbox below when rendering.</p>
+    <p class="hint" id="logoPlayHint">Plays once, then freezes on the last frame. Change in Advanced if you want loop/ping-pong.</p>
     <button type="button" class="btn ghost" id="btnResetLogo">Reset 30Y logo</button>
     <div class="row2" style="margin-top:8px">
       <label class="field">Logo size (px)
@@ -1647,7 +1647,7 @@ function currentPresetPayload(name, { forDownload = false } = {}) {
     logoRef: logo.logoRef,
     logoDataUrl: logo.logoDataUrl,
     logoOmitted: !!logo.logoOmitted,
-    logoPlayMode: (typeof getLogoPlayMode === "function" ? getLogoPlayMode() : "loop"),
+    logoPlayMode: (typeof getLogoPlayMode === "function" ? getLogoPlayMode() : "once"),
     people: structuredClone(people),
     selectedId,
   };
@@ -1656,7 +1656,7 @@ function currentPresetPayload(name, { forDownload = false } = {}) {
 function applyPreset(pr) {
   if (pr.sourceUrl) $("sourceUrl").value = pr.sourceUrl;
   if (pr.theme) applyTheme(pr.theme);
-  if (pr.logoPlayMode && $("logoPlayMode")) $("logoPlayMode").value = pr.logoPlayMode;
+  if ($("logoPlayMode")) $("logoPlayMode").value = pr.logoPlayMode || "once";
   if (typeof setLogo === "function") setLogo(resolveLogoFromPreset(pr));
   else if (pr.logoPlayMode && typeof applyLogoPlayMode === "function") applyLogoPlayMode();
   if (pr.logoOmitted) {
@@ -2879,7 +2879,7 @@ wireAnimButtons();
 
 /* ── Logo playback: hold / once / loop / pingpong ── */
 let logoAnim = {
-  mode: "loop",
+  mode: "once",
   frames: null,       // ImageBitmap[] or HTMLImageElement[] for multi-frame
   frameIndex: 0,
   dir: 1,
@@ -2898,7 +2898,7 @@ const LOGO_MODE_HINTS = {
 };
 
 function getLogoPlayMode() {
-  return ($("logoPlayMode") && $("logoPlayMode").value) || "loop";
+  return ($("logoPlayMode") && $("logoPlayMode").value) || "once";
 }
 
 function updateLogoPlayHint() {
@@ -3245,6 +3245,19 @@ function wireLogoPlayMode() {
   updateLogoPlayHint();
 }
 wireLogoPlayMode();
+// Default logo: play once → hold last (all presets unless overridden)
+(function ensureDefaultLogoPlay() {
+  const sel = $("logoPlayMode");
+  if (sel && !sel.value) sel.value = "once";
+  if (sel && !localStorage.getItem("l3studio.logoPlayMode")) {
+    // first visit / no explicit user choice stored with preset
+    const hasPresetMode = false;
+    if (!hasPresetMode) sel.value = "once";
+  }
+  if (typeof applyLogoPlayMode === "function") applyLogoPlayMode();
+  else if (typeof replayLogo === "function") replayLogo();
+})();
+
 
 // Re-apply logo with playback engine (modes: hold/once/loop/pingpong)
 if (typeof setLogo === "function" && typeof logoDataUrl === "string") {
