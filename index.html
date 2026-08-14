@@ -571,6 +571,70 @@
     background: rgba(255,255,255,0.06);
     color: var(--ui-muted);
   }
+
+  /* ── Icons (inline SVG) ── */
+  .ico {
+    display: inline-flex;
+    width: 1.1em;
+    height: 1.1em;
+    flex: 0 0 auto;
+    vertical-align: -0.15em;
+    margin-right: 0.35em;
+  }
+  .ico svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .ico.fill svg { fill: currentColor; stroke: none; }
+  .btn .ico, .btn-primary .ico, .btn-sec .ico, .btn-wiz .ico,
+  .btn-render-one .ico, .simple-bar .btn-primary .ico, .simple-bar .btn-sec .ico {
+    margin-right: 0.4em;
+  }
+  .btn-render-one .ico { margin-right: 0.25em; width: 12px; height: 12px; }
+  h2 .ico {
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    opacity: 0.9;
+    vertical-align: -2px;
+  }
+  .chip .ico {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    opacity: 0.85;
+  }
+  .simple-vm .ico {
+    width: 14px;
+    height: 14px;
+    margin-right: 2px;
+    color: var(--ui-accent);
+  }
+  #authGate .auth-logo {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 12px;
+    border-radius: 12px;
+    background: rgba(10,132,255,0.18);
+    border: 1px solid rgba(10,132,255,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6cb6ff;
+  }
+  #authGate .auth-logo .ico { width: 22px; height: 22px; margin: 0; }
+  .icon-btn-inner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
   body.mode-simple main.stage-wrap {
     grid-column: 2;
   }
@@ -1694,6 +1758,7 @@
 <div class="busy-banner" id="busyBanner" role="status">Rendering…</div>
 <div id="authGate" role="dialog" aria-modal="true" aria-labelledby="authTitle">
   <div class="auth-card">
+    <div class="auth-logo" aria-hidden="true"><span class="ico" data-ico="lock"></span></div>
     <p class="auth-brand">VFXtraining AI Assist</p>
     <h1 id="authTitle">Lower Third Studio</h1>
     <p class="auth-sub">Authorized access. Password unlocks the full render → Fusion workflow.</p>
@@ -1701,7 +1766,7 @@
       <label for="authPass">Password</label>
       <input id="authPass" name="password" type="password" autocomplete="current-password" required autofocus />
       <div class="auth-row">
-        <button type="submit">Unlock</button>
+        <button type="submit"><span class="ico" data-ico="unlock"></span>Unlock</button>
       </div>
       <p class="auth-err" id="authErr" aria-live="polite"></p>
     </form>
@@ -1717,6 +1782,8 @@
     document.body.classList.remove("gate-locked");
     document.body.classList.add("gate-unlocked");
     try { sessionStorage.setItem(GATE_KEY, "1"); } catch (e) {}
+    try { if (typeof paintIcons === "function") paintIcons(document); } catch (e) {}
+    setTimeout(function(){ try { if (typeof paintIcons === "function") paintIcons(document); } catch(e){} }, 50);
   }
   function already() {
     try { return sessionStorage.getItem(GATE_KEY) === "1"; } catch (e) { return false; }
@@ -1779,10 +1846,10 @@
     <span class="tag tag-long" style="margin:0">Lower Third Studio · City of Aventura</span>
   </div>
   <div class="spacer"></div>
-  <button type="button" class="btn-wiz primary" id="btnNewDesign">New Design</button>
+  <button type="button" class="btn-wiz primary" id="btnNewDesign"><span class="ico" data-ico="wand"></span>New Design</button>
   <div class="mode-toggle" title="Simple = fast results · Advanced = full controls">
-    <button type="button" id="modeSimple" class="on">Simple</button>
-    <button type="button" id="modeAdvanced">Advanced</button>
+    <button type="button" id="modeSimple" class="on"><span class="ico" data-ico="bolt"></span>Simple</button>
+    <button type="button" id="modeAdvanced"><span class="ico" data-ico="sliders"></span>Advanced</button>
   </div>
   <span class="pill" id="statusPill" style="margin-left:8px">Ready</span>
 </header>
@@ -1790,22 +1857,22 @@
 <aside>
   <!-- 1. Primary workflow -->
   <div class="sec render-pack" id="renderPackPanel" style="margin-bottom:12px;border:1px solid rgba(10,132,255,0.5);background:rgba(10,132,255,0.1);border-radius:14px;padding:12px 12px 10px">
-    <h2 style="color:#7ec2ff;margin:0 0 6px">1 · Render &amp; package</h2>
+    <h2 style="color:#7ec2ff;margin:0 0 6px"><span class="ico" data-ico="film"></span>1 · Render &amp; package</h2>
     <p class="hint" style="margin:0 0 10px;line-height:1.4">
       <b>Render</b> = full animated PNG sequence (not a still).
       Then <b>Fusion template</b> for Resolve. Shortcuts: <kbd>R</kbd> this · <kbd>⇧R</kbd> all.
     </p>
     <label class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row;margin-bottom:8px">
       <input type="checkbox" id="renderBothStyles" checked />
-      <span>Both styles (Civic + Dual)</span>
+      <span><span class="ico" data-ico="layers"></span>Both styles (Civic + Dual)</span>
     </label>
     <div class="stack-btns">
-      <button type="button" class="btn" id="btnRenderThisPack" style="flex:1">Render this</button>
-      <button type="button" class="btn" id="btnRenderAllPack" style="flex:1">Render all</button>
+      <button type="button" class="btn" id="btnRenderThisPack" style="flex:1"><span class="ico" data-ico="download"></span>Render this</button>
+      <button type="button" class="btn" id="btnRenderAllPack" style="flex:1"><span class="ico" data-ico="stack"></span>Render all</button>
     </div>
     <div class="stack-btns" style="margin-top:6px">
-      <button type="button" class="btn ghost" id="btnBuildFusionPack" style="flex:1">Fusion template…</button>
-      <button type="button" class="btn ghost" id="btnInstallResolveTools" style="flex:1">Resolve ID tools…</button>
+      <button type="button" class="btn ghost" id="btnBuildFusionPack" style="flex:1"><span class="ico" data-ico="fusion"></span>Fusion template…</button>
+      <button type="button" class="btn ghost" id="btnInstallResolveTools" style="flex:1"><span class="ico" data-ico="user-scan"></span>Resolve ID tools…</button>
     </div>
     <progress id="renderPackProg" hidden style="width:100%;margin-top:8px"></progress>
     <div class="render-pack-log" id="renderPackLog" aria-live="polite"></div>
@@ -1814,25 +1881,25 @@
 
   <!-- 2. Look -->
   <div class="sec" style="margin-bottom:10px">
-    <h2>2 · Style</h2>
+    <h2><span class="ico" data-ico="palette"></span>2 · Style</h2>
     <div class="style-lib" id="styleLib"></div>
     <p class="hint" style="margin:4px 0 0">Switch before rendering. Logo: play once → hold.</p>
   </div>
 
   <!-- 3. Who -->
   <div class="sec" style="margin-bottom:8px">
-    <h2>3 · People <span id="count" class="tag"></span></h2>
+    <h2><span class="ico" data-ico="users"></span>3 · People <span id="count" class="tag"></span></h2>
     <input type="search" class="simple-search" id="peopleSearch" placeholder="Filter name or title…" autocomplete="off" style="margin-bottom:8px" />
     <label class="simple-vm" id="simpleVmRow" style="margin-bottom:8px">
       <input type="checkbox" id="simpleViceMayor" />
-      <span><b>Vice Mayor</b> for selected (commissioners)</span>
+      <span><span class="ico" data-ico="star"></span><b>Vice Mayor</b> for selected (commissioners)</span>
     </label>
     <div class="people" id="peopleList"></div>
   </div>
 
   <!-- 4. Text overrides -->
   <div class="sec onair-tools" id="onAirTools" style="margin-bottom:12px">
-    <h2>4 · On-air text</h2>
+    <h2><span class="ico" data-ico="type"></span>4 · On-air text</h2>
     <p class="hint" style="margin:0 0 8px">Override name/title for the selected person. Or click type on the stage.</p>
     <label class="field">Name
       <input type="text" id="onAirName" placeholder="On-air name" autocomplete="off" spellcheck="false" />
@@ -1841,14 +1908,14 @@
       <input type="text" id="onAirTitle" placeholder="Full title · org" autocomplete="off" spellcheck="false" />
     </label>
     <div class="stack-btns" style="margin-top:6px">
-      <button type="button" class="btn ghost" id="btnOnAirClear" style="flex:1" title="Restore roster text">Clear override</button>
+      <button type="button" class="btn ghost" id="btnOnAirClear" style="flex:1" title="Restore roster text"><span class="ico" data-ico="undo"></span>Clear override</button>
     </div>
     <p class="hint" id="onAirStatus" style="margin:8px 0 0">Live as you type · saved per person</p>
   </div>
 
   <!-- Secondary: size / presets / live update -->
   <details class="sec pkg-tools" id="pkgTools" style="margin-bottom:10px">
-    <summary style="cursor:pointer;font-size:11px;font-weight:650;letter-spacing:0.06em;text-transform:uppercase;color:var(--ui-muted)">Size &amp; position (all titles in style)</summary>
+    <summary style="cursor:pointer;font-size:11px;font-weight:650;letter-spacing:0.06em;text-transform:uppercase;color:var(--ui-muted)"><span class="ico" data-ico="move"></span>Size &amp; position (all titles in style)</summary>
     <div style="margin-top:10px">
     <label class="field">Size <span id="pkgScaleVal" style="float:right;color:var(--ui-muted)">72%</span>
       <input type="range" id="pkgScale" min="0.40" max="1.15" step="0.01" value="0.72" />
@@ -1875,7 +1942,7 @@
   </details>
 
   <details class="simple-preset-bar" id="simplePresetBar" style="margin-bottom:10px">
-    <summary style="cursor:pointer;font-size:11px;font-weight:650;letter-spacing:0.06em;text-transform:uppercase;color:var(--ui-muted);margin-bottom:8px">Presets</summary>
+    <summary style="cursor:pointer;font-size:11px;font-weight:650;letter-spacing:0.06em;text-transform:uppercase;color:var(--ui-muted);margin-bottom:8px"><span class="ico" data-ico="bookmark"></span>Presets</summary>
     <select id="simplePresetSelect" title="Switch design preset" aria-label="Switch preset">
       <option value="">— Current look —</option>
     </select>
@@ -1890,13 +1957,13 @@
   </details>
 
   <details style="margin-bottom:12px">
-    <summary style="cursor:pointer;font-size:11px;font-weight:650;letter-spacing:0.06em;text-transform:uppercase;color:var(--ui-muted)">Roster / live update</summary>
+    <summary style="cursor:pointer;font-size:11px;font-weight:650;letter-spacing:0.06em;text-transform:uppercase;color:var(--ui-muted)"><span class="ico" data-ico="refresh"></span>Roster / live update</summary>
     <div style="margin-top:8px">
-      <button type="button" class="btn ghost" id="btnLiveUpdate" style="width:100%" title="Re-fetch from city site">↻ Live update from cityofaventura.com</button>
+      <button type="button" class="btn ghost" id="btnLiveUpdate" style="width:100%" title="Re-fetch from city site"><span class="ico" data-ico="refresh"></span>Live update from cityofaventura.com</button>
       <p class="hint" id="liveUpdateStatus" style="margin:8px 0 0">Keeps Vice Mayor + nickname overrides.</p>
       <div class="stack-btns" style="margin-top:8px">
-        <button type="button" class="btn ghost" id="btnPlay" style="flex:1">Preview play</button>
-        <button type="button" class="btn ghost" id="btnDlOne" style="flex:1">Render this (alias)</button>
+        <button type="button" class="btn ghost" id="btnPlay" style="flex:1"><span class="ico" data-ico="play"></span>Preview play</button>
+        <button type="button" class="btn ghost" id="btnDlOne" style="flex:1"><span class="ico" data-ico="download"></span>Render this</button>
       </div>
     </div>
   </details>
@@ -1967,21 +2034,21 @@
 
 <main class="stage-wrap">
   <div class="simple-bar">
-    <button type="button" class="btn-primary" id="btnRenderThisPackBar" title="R — render selected">Render this</button>
-    <button type="button" class="btn-primary" id="btnRenderAllPackBar" title="⇧R — render all" style="background:#0a84ff">Render all</button>
-    <button type="button" class="btn-sec" id="btnBuildFusionBar" title="Build Fusion switcher title">Fusion…</button>
-    <button type="button" class="btn-sec" id="btnPlaySimple">Preview</button>
-    <button type="button" class="btn-sec" data-aspect="16x9">16:9</button>
-    <button type="button" class="btn-sec" data-aspect="9x16">9:16</button>
+    <button type="button" class="btn-primary" id="btnRenderThisPackBar" title="R — render selected"><span class="ico" data-ico="download"></span>Render this</button>
+    <button type="button" class="btn-primary" id="btnRenderAllPackBar" title="⇧R — render all" style="background:#0a84ff"><span class="ico" data-ico="stack"></span>Render all</button>
+    <button type="button" class="btn-sec" id="btnBuildFusionBar" title="Build Fusion switcher title"><span class="ico" data-ico="fusion"></span>Fusion…</button>
+    <button type="button" class="btn-sec" id="btnPlaySimple"><span class="ico" data-ico="play"></span>Preview</button>
+    <button type="button" class="btn-sec" data-aspect="16x9"><span class="ico" data-ico="wide"></span>16:9</button>
+    <button type="button" class="btn-sec" data-aspect="9x16"><span class="ico" data-ico="tall"></span>9:16</button>
     <div class="grow"></div>
-    <span class="pill" id="simpleExportHint" style="font-size:11px">PNG seq · 24fps · MB×16</span>
-    <button type="button" class="btn-sec" id="btnNewDesignSimple">+ Design</button>
-    <button type="button" class="btn-sec" id="btnOpenAdvanced">Advanced</button>
+    <span class="pill" id="simpleExportHint" style="font-size:11px"><span class="ico" data-ico="film"></span>PNG seq · 24fps · MB×16</span>
+    <button type="button" class="btn-sec" id="btnNewDesignSimple"><span class="ico" data-ico="wand"></span>Design</button>
+    <button type="button" class="btn-sec" id="btnOpenAdvanced"><span class="ico" data-ico="sliders"></span>Advanced</button>
   </div>
   <div class="stage-meta" id="stageMeta" aria-live="polite">
-    <span class="chip accent" id="chipStyle">Style</span>
-    <span class="chip" id="chipPerson">Person</span>
-    <span class="chip" id="chipAspect">16:9</span>
+    <span class="chip accent" id="chipStyle"><span class="ico" data-ico="palette"></span><span class="chip-t">Style</span></span>
+    <span class="chip" id="chipPerson"><span class="ico" data-ico="user"></span><span class="chip-t">Person</span></span>
+    <span class="chip" id="chipAspect"><span class="ico" data-ico="wide"></span><span class="chip-t">16:9</span></span>
   </div>
   <div class="toolbar toolbar-full">
     <button type="button" class="btn ghost" data-aspect="16x9">16:9</button>
@@ -2619,7 +2686,9 @@ function renderStyleLibrary() {
         <div style="flex:1;height:28px;border-radius:5px;background:linear-gradient(180deg,#12305c,#0b1f3d);border-left:3px solid #c9a24a"></div>
       </div>`;
     }
-    b.innerHTML = thumb + `<div class="sl-t">${st.name}</div><div class="sl-s">${st.blurb}</div>`;
+    const styleIco = st.id === "aventura-dual" ? "layers" : "palette";
+    b.innerHTML = thumb + `<div class="sl-t">${iconHTML(styleIco)}${st.name}</div><div class="sl-s">${st.blurb}</div>`;
+    paintIcons(b);
     b.onclick = () => applyStyleLibrary(st.id, { play: true });
     box.appendChild(b);
   }
@@ -2874,6 +2943,57 @@ const STATE_KEY = "l3studio.state.v1";
 
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
+
+/* ── Icon system (inline SVG, monochrome stroke) ── */
+const L3_ICONS = {
+  film: '<path d="M4 6h16v12H4z"/><path d="M8 6v12M16 6v12M4 10h4M16 10h4M4 14h4M16 14h4"/>',
+  download: '<path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M5 18h14"/>',
+  stack: '<path d="M4 8l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16l8 4 8-4"/>',
+  fusion: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
+  "user-scan": '<circle cx="12" cy="9" r="3.2"/><path d="M5 19c1.5-3 4-4.5 7-4.5S17.5 16 19 19"/><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/>',
+  layers: '<path d="M12 4l8 4-8 4-8-4 8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 16l8 4 8-4"/>',
+  palette: '<path d="M12 4a8 8 0 1 0 0 16h2a2.5 2.5 0 0 0 0-5h-1"/><circle cx="8" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="8.5" r="1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="14" r="1" fill="currentColor" stroke="none"/>',
+  users: '<circle cx="9" cy="9" r="3"/><circle cx="16" cy="10" r="2.4"/><path d="M3.5 19c1.2-3 3.4-4.5 5.5-4.5S13.3 16 14.5 19"/><path d="M15 14.8c1.6.2 3.2 1.2 4.5 4.2"/>',
+  user: '<circle cx="12" cy="9" r="3.2"/><path d="M5 19c1.5-3 4-4.5 7-4.5S17.5 16 19 19"/>',
+  type: '<path d="M5 7h14"/><path d="M12 7v11"/><path d="M8 18h8"/>',
+  undo: '<path d="M9 8H5V4"/><path d="M5 8a7 7 0 1 1 2 6.5"/>',
+  move: '<path d="M12 3v18M3 12h18"/><path d="M8 7l4-4 4 4M8 17l4 4 4-4M7 8l-4 4 4 4M17 8l4 4-4 4"/>',
+  bookmark: '<path d="M7 4h10v16l-5-3.5L7 20V4z"/>',
+  refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 5v5h-5"/>',
+  play: '<path d="M8 6l12 6-12 6V6z" fill="currentColor" stroke="none"/>',
+  wand: '<path d="M5 19L15 9"/><path d="M13 7l2 2"/><path d="M16 4v2M19 7h2M17.5 5.5l1.2-1.2M4 12h2M5 5l1 1"/>',
+  sliders: '<path d="M5 7h8M17 7h2M5 12h2M11 12h8M5 17h10M19 17h0"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/>',
+  bolt: '<path d="M13 3L5 14h6l-1 7 9-12h-6l0-6z" fill="currentColor" stroke="none"/>',
+  star: '<path d="M12 3l2.4 5.4L20 9.3l-4 4.2.9 5.5L12 16.5 7.1 19l.9-5.5-4-4.2 5.6-1 2.4-5.3z" fill="currentColor" stroke="none"/>',
+  wide: '<rect x="3" y="7" width="18" height="10" rx="1.5"/><path d="M8 17v1M16 17v1"/>',
+  tall: '<rect x="7" y="3" width="10" height="18" rx="1.5"/><path d="M7 8h-1M7 16h-1"/>',
+  lock: '<rect x="6" y="10" width="12" height="10" rx="2"/><path d="M8 10V8a4 4 0 0 1 8 0v2"/>',
+  unlock: '<rect x="6" y="10" width="12" height="10" rx="2"/><path d="M8 10V8a4 4 0 0 1 7.5-2"/>',
+  check: '<path d="M5 12l5 5L20 7"/>',
+  alert: '<path d="M12 4l9 16H3L12 4z"/><path d="M12 10v4M12 16.5v.5"/>',
+};
+
+function icoSvg(name) {
+  const body = L3_ICONS[name] || L3_ICONS.film;
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
+}
+
+function paintIcons(rootEl) {
+  const scope = rootEl || document;
+  scope.querySelectorAll(".ico[data-ico]").forEach((el) => {
+    const name = el.getAttribute("data-ico");
+    if (!name || el.dataset.painted === "1") return;
+    el.innerHTML = icoSvg(name);
+    el.dataset.painted = "1";
+  });
+}
+
+function iconHTML(name) {
+  return `<span class="ico" data-ico="${name}">${icoSvg(name)}</span>`;
+}
+
+// Paint icons already in the DOM as soon as script runs
+try { paintIcons(document); } catch (_) {}
 
 
 /* Early name helpers (must exist before people init) */
@@ -3310,18 +3430,25 @@ function renderPerson() {
 
 function updateStageMeta() {
   const p = typeof selected === "function" ? selected() : null;
-  const dual = typeof isDualStyle === "function" && isDualStyle();
   const styleName = (typeof STYLE_LIBRARY !== "undefined" && STYLE_LIBRARY[activeStyleId])
     ? STYLE_LIBRARY[activeStyleId].name
     : (activeStyleId || "Style");
-  if ($("chipStyle")) $("chipStyle").textContent = styleName;
-  if ($("chipPerson")) {
-    $("chipPerson").textContent = p
-      ? ((typeof onAirNameOf === "function" ? onAirNameOf(p) : p.name) + (p.viceMayor ? " · VM" : ""))
-      : "No person";
-  }
+  const setChip = (id, ico, text) => {
+    const el = $(id);
+    if (!el) return;
+    el.innerHTML = iconHTML(ico) + `<span class="chip-t"></span>`;
+    const t = el.querySelector(".chip-t");
+    if (t) t.textContent = text;
+    paintIcons(el);
+  };
+  setChip("chipStyle", "palette", styleName);
+  setChip(
+    "chipPerson",
+    "user",
+    p ? ((typeof onAirNameOf === "function" ? onAirNameOf(p) : p.name) + (p.viceMayor ? " · VM" : "")) : "No person"
+  );
   const port = $("stage")?.classList.contains("portrait");
-  if ($("chipAspect")) $("chipAspect").textContent = port ? "9:16" : "16:9";
+  setChip("chipAspect", port ? "tall" : "wide", port ? "9:16" : "16:9");
 }
 
 function setBusyRender(on, msg) {
@@ -3470,12 +3597,13 @@ function renderList() {
     b.setAttribute("role", "button");
     b.tabIndex = 0;
     b.innerHTML = `<div class="person-main"><div class="n"></div><div class="t"></div><div class="g"></div></div>
-      <button type="button" class="btn-render-one" data-render-id="${p.id}" title="Render PNG sequence for this person">Render</button>`;
+      <button type="button" class="btn-render-one" data-render-id="${p.id}" title="Render PNG sequence for this person">${iconHTML("download")}Render</button>`;
     ensureBaseTitle(p);
     const onAir = (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
     b.querySelector(".n").textContent = onAir + (p.viceMayor ? "  ★" : "");
     b.querySelector(".t").textContent = displayTitle(p);
     b.querySelector(".g").textContent = (p.group || "") + (p.viceMayor ? " · Vice Mayor" : "");
+    paintIcons(b);
     const select = () => {
       selectedId = p.id;
       renderList();
@@ -3492,13 +3620,20 @@ function renderList() {
       renderList();
       if (typeof renderPackPerson === "function") {
         rb.disabled = true;
-        rb.textContent = "…";
+        rb.innerHTML = iconHTML("film") + "…";
+        paintIcons(rb);
         try {
           await renderPackPerson(p, { bothStyles: !!$("renderBothStyles")?.checked });
-          rb.textContent = "✓";
-          setTimeout(() => { rb.textContent = "Render"; rb.disabled = false; }, 1200);
+          rb.innerHTML = iconHTML("check") + "Done";
+          paintIcons(rb);
+          setTimeout(() => {
+            rb.innerHTML = iconHTML("download") + "Render";
+            paintIcons(rb);
+            rb.disabled = false;
+          }, 1200);
         } catch (e) {
-          rb.textContent = "!";
+          rb.innerHTML = iconHTML("alert") + "Err";
+          paintIcons(rb);
           rb.disabled = false;
           packLog("Error: " + (e.message || e));
         }
@@ -5685,6 +5820,7 @@ function wireRenderPackUI() {
   }
 }
 wireRenderPackUI();
+try { paintIcons(document); } catch (_) {}
 
 // Expose for AI / console
 if (typeof window !== "undefined") {
