@@ -1146,6 +1146,25 @@
     max-width: none !important;
     -webkit-font-smoothing: antialiased;
   }
+  /* Click-to-edit on stage */
+  .l3 .name[contenteditable="true"],
+  .l3 .title[contenteditable="true"] {
+    outline: none;
+    cursor: text;
+    border-radius: 4px;
+  }
+  .l3 .name[contenteditable="true"]:hover,
+  .l3 .title[contenteditable="true"]:hover {
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
+  }
+  .l3 .name[contenteditable="true"]:focus,
+  .l3 .title[contenteditable="true"]:focus {
+    box-shadow: inset 0 0 0 2px rgba(10,132,255,0.65);
+    background: rgba(10,132,255,0.08);
+  }
+  .onair-tools input[type="text"] {
+    font-size: 13px;
+  }
 
   /* Civic bars transparent */
   .l3[data-style="civic"] .name-bar,
@@ -1719,6 +1738,22 @@
     <div class="people" id="peopleList"></div>
   </div>
 
+  <div class="sec onair-tools" id="onAirTools" style="margin-bottom:12px">
+    <h2>On-air text</h2>
+    <p class="hint" style="margin:0 0 10px">Manual override for the <b>selected person</b>. Updates the stage live and sticks for export. You can also <b>click the name or title on the stage</b> to type.</p>
+    <label class="field">Name on lower third
+      <input type="text" id="onAirName" placeholder="Name as it should read on air" autocomplete="off" spellcheck="false" />
+    </label>
+    <label class="field">Title on lower third
+      <input type="text" id="onAirTitle" placeholder="Full title · org" autocomplete="off" spellcheck="false" />
+    </label>
+    <div class="stack-btns" style="margin-top:6px">
+      <button type="button" class="btn" id="btnOnAirApply" style="flex:1">Apply to selected</button>
+      <button type="button" class="btn ghost" id="btnOnAirClear" style="flex:1" title="Restore roster / source text">Clear override</button>
+    </div>
+    <p class="hint" id="onAirStatus" style="margin:8px 0 0">Pick a person, then edit name or title.</p>
+  </div>
+
   <div class="sec" style="margin-top:8px">
     <div class="stack-btns">
       <button type="button" class="btn" id="btnPlay" style="flex:1">Play</button>
@@ -1731,10 +1766,13 @@
       <summary>Edit person</summary>
       <div class="fold-body">
         <label class="field">Legal / source name<input type="text" id="editName" /></label>
-        <label class="field">On-air name (nickname override)
+        <label class="field">On-air name (override — what shows on L3)
           <input type="text" id="editDisplayName" placeholder="Leave blank to use legal name" />
         </label>
-        <label class="field">Title (base)<input type="text" id="editTitle" /></label>
+        <label class="field">Title (base / roster)<input type="text" id="editTitle" /></label>
+        <label class="field">Title override (what shows on L3)
+          <input type="text" id="editTitleOverride" placeholder="Leave blank to use base title" />
+        </label>
         <label class="field">Group<input type="text" id="editGroup" /></label>
         <div class="export-box" style="margin-bottom:8px">
           <label class="field" style="display:flex;align-items:center;gap:8px;flex-direction:row">
@@ -2727,8 +2765,9 @@ function applyNameExceptions(p) {
 }
 function displayNameOf(p) {
   if (!p) return "";
+  if (p.nameOverride && String(p.nameOverride).trim()) return String(p.nameOverride).trim();
   if (p.displayName && String(p.displayName).trim()) return String(p.displayName).trim();
-  return p.name || "";
+  return p.name || p.legalName || "";
 }
 
 let people = normalizePeople(structuredClone(EMBEDDED_PEOPLE));
@@ -3020,6 +3059,10 @@ function isCommissionerPerson(p) {
 /** Effective on-air title (respects Vice Mayor override). */
 function displayTitle(p) {
   if (!p) return "";
+  // Manual on-air title override wins over roster + VM automation
+  if (p.titleOverride && String(p.titleOverride).trim()) {
+    return String(p.titleOverride).trim();
+  }
   const base = p.baseTitle || p.title || "";
   if (!p.viceMayor) return base;
   const form = p.viceMayorForm || "short";
@@ -3047,6 +3090,9 @@ function normalizePeople(list) {
     if (q.viceMayorCustom == null) q.viceMayorCustom = "";
     if (q.displayName == null) q.displayName = "";
     if (q.displayNameLocked == null) q.displayNameLocked = false;
+    if (q.nameOverride == null) q.nameOverride = "";
+    if (q.titleOverride == null) q.titleOverride = "";
+    if (q.dualTitle == null) q.dualTitle = "";
     return q;
   });
 }
@@ -3056,28 +3102,192 @@ function selected() {
   return people.find((p) => p.id === selectedId) || people[0];
 }
 
+function onAirNameOf(p) {
+  return (typeof displayNameOf === "function" ? displayNameOf(p) : (p && (p.name || ""))) || "";
+}
+function onAirTitleOf(p) {
+  return (typeof displayTitle === "function" ? displayTitle(p) : (p && (p.title || ""))) || "";
+}
+
 function renderPerson() {
   const p = selected();
   if (!p) return;
   ensureBaseTitle(p);
   const dual = isDualStyle();
-  $("nameEl").textContent = dual ? dualNameText(p) : (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
-  $("titleEl").textContent = dual ? dualTitleShort(p) : displayTitle(p);
-  $("editName").value = p.legalName || p.name;
-  if ($("editDisplayName")) $("editDisplayName").value = p.displayName || "";
-  $("editTitle").value = p.baseTitle || p.title || "";
-  $("editGroup").value = p.group || "";
+  const nameEl = $("nameEl");
+  const titleEl = $("titleEl");
+  // Don't clobber stage text while the user is typing on it
+  const nameFocused = nameEl && document.activeElement === nameEl;
+  const titleFocused = titleEl && document.activeElement === titleEl;
+  if (nameEl && !nameFocused) {
+    nameEl.textContent = dual ? dualNameText(p) : onAirNameOf(p);
+  }
+  if (titleEl && !titleFocused) {
+    titleEl.textContent = dual ? dualTitleShort(p) : onAirTitleOf(p);
+  }
+  if ($("editName") && document.activeElement !== $("editName")) {
+    $("editName").value = p.legalName || p.name || "";
+  }
+  if ($("editDisplayName") && document.activeElement !== $("editDisplayName")) {
+    $("editDisplayName").value = p.nameOverride || p.displayName || "";
+  }
+  if ($("editTitle") && document.activeElement !== $("editTitle")) {
+    $("editTitle").value = p.baseTitle || p.title || "";
+  }
+  if ($("editTitleOverride") && document.activeElement !== $("editTitleOverride")) {
+    $("editTitleOverride").value = p.titleOverride || "";
+  }
+  if ($("editGroup") && document.activeElement !== $("editGroup")) {
+    $("editGroup").value = p.group || "";
+  }
+  // On-air panel (simple) — show effective text unless user is typing there
+  if ($("onAirName") && document.activeElement !== $("onAirName")) {
+    $("onAirName").value = onAirNameOf(p);
+  }
+  if ($("onAirTitle") && document.activeElement !== $("onAirTitle")) {
+    $("onAirTitle").value = onAirTitleOf(p);
+  }
   if ($("editViceMayor")) {
     $("editViceMayor").checked = !!p.viceMayor;
-    // enable strongly for commissioners; still allow for anyone
     $("editViceMayor").disabled = false;
   }
   if ($("editViceMayorForm")) $("editViceMayorForm").value = p.viceMayorForm || "short";
   if ($("editViceMayorCustom")) $("editViceMayorCustom").value = p.viceMayorCustom || "";
-  const eff = displayTitle(p);
-  const onAirN = (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
-  $("statusPill").textContent = p.viceMayor ? (onAirN + " · VM") : onAirN;
+  const onAirN = onAirNameOf(p);
+  const overridden = !!(p.nameOverride || p.titleOverride || (p.displayNameLocked && p.displayName));
+  if ($("onAirStatus")) {
+    $("onAirStatus").textContent = overridden
+      ? "Override on · saved with this person (export uses this text)"
+      : "Using roster text · type to override";
+  }
+  if ($("statusPill") && document.activeElement !== $("onAirName") && document.activeElement !== $("onAirTitle")) {
+    $("statusPill").textContent = p.viceMayor ? (onAirN + " · VM") : onAirN;
+  }
   fitText();
+}
+
+/** Apply manual on-air name/title to the selected person (live + export). */
+function applyOnAirOverrides({ name, title, clear = false } = {}) {
+  const p = selected();
+  if (!p) return null;
+  ensureBaseTitle(p);
+  if (clear) {
+    p.nameOverride = "";
+    p.titleOverride = "";
+    p.displayName = "";
+    p.displayNameLocked = false;
+    p.dualTitle = "";
+    applyNameExceptions(p);
+    if ($("statusPill")) $("statusPill").textContent = "Overrides cleared · roster text";
+  } else {
+    if (name != null) {
+      const n = String(name).trim();
+      p.nameOverride = n;
+      p.displayName = n;
+      p.displayNameLocked = !!n;
+      if (!n) applyNameExceptions(p);
+    }
+    if (title != null) {
+      const t = String(title).trim();
+      p.titleOverride = t;
+      // dualTitle forces exact dual plate string when set
+      p.dualTitle = t;
+      // keep baseTitle if empty so roster still has something
+      if (t && !(p.baseTitle || p.title)) {
+        p.baseTitle = t;
+        p.title = t;
+      }
+    }
+  }
+  if (typeof persistState === "function") persistState();
+  if (typeof renderList === "function") renderList();
+  if (typeof renderPerson === "function") renderPerson();
+  // Keep package visible (no re-anim) so typing stays snappy
+  const l3 = $("l3");
+  if (l3) {
+    l3.classList.add("show");
+    l3.style.opacity = "1";
+    l3.style.transform = "";
+  }
+  return p;
+}
+
+function wireOnAirTextUI() {
+  const liveFromInputs = () => {
+    applyOnAirOverrides({
+      name: $("onAirName") ? $("onAirName").value : undefined,
+      title: $("onAirTitle") ? $("onAirTitle").value : undefined,
+    });
+    if ($("onAirStatus")) $("onAirStatus").textContent = "Override live · saved for this person";
+  };
+  for (const id of ["onAirName", "onAirTitle"]) {
+    const el = $(id);
+    if (!el || el._onAirWired) continue;
+    el._onAirWired = true;
+    el.addEventListener("input", liveFromInputs);
+    el.addEventListener("change", liveFromInputs);
+  }
+  // Mirror Advanced fields live too
+  for (const id of ["editDisplayName", "editTitleOverride"]) {
+    const el = $(id);
+    if (!el || el._onAirWired) continue;
+    el._onAirWired = true;
+    el.addEventListener("input", () => {
+      if (id === "editDisplayName") {
+        applyOnAirOverrides({ name: el.value });
+      } else {
+        applyOnAirOverrides({ title: el.value });
+      }
+    });
+  }
+  if ($("btnOnAirApply") && !$("btnOnAirApply")._onAirWired) {
+    $("btnOnAirApply")._onAirWired = true;
+    $("btnOnAirApply").onclick = () => {
+      applyOnAirOverrides({
+        name: $("onAirName") ? $("onAirName").value : "",
+        title: $("onAirTitle") ? $("onAirTitle").value : "",
+      });
+      if ($("statusPill")) $("statusPill").textContent = "On-air text saved for " + (selected()?.name || "person");
+    };
+  }
+  if ($("btnOnAirClear") && !$("btnOnAirClear")._onAirWired) {
+    $("btnOnAirClear")._onAirWired = true;
+    $("btnOnAirClear").onclick = () => applyOnAirOverrides({ clear: true });
+  }
+
+  // Click-to-edit on the stage package
+  const bindStageEdit = (el, which) => {
+    if (!el || el._stageEditWired) return;
+    el._stageEditWired = true;
+    el.contentEditable = "true";
+    el.spellcheck = false;
+    el.setAttribute("role", "textbox");
+    el.setAttribute("aria-label", which === "name" ? "Edit on-air name" : "Edit on-air title");
+    el.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        el.blur();
+      }
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        if (typeof renderPerson === "function") renderPerson();
+        el.blur();
+      }
+    });
+    el.addEventListener("input", () => {
+      const raw = (el.textContent || "").replace(/\u00a0/g, " ");
+      if (which === "name") applyOnAirOverrides({ name: raw });
+      else applyOnAirOverrides({ title: raw });
+    });
+    el.addEventListener("blur", () => {
+      const raw = (el.textContent || "").replace(/\u00a0/g, " ").trim();
+      if (which === "name") applyOnAirOverrides({ name: raw });
+      else applyOnAirOverrides({ title: raw });
+      if (typeof renderPerson === "function") renderPerson();
+    });
+  };
+  bindStageEdit($("nameEl"), "name");
+  bindStageEdit($("titleEl"), "title");
 }
 
 function fitText() {
@@ -3516,6 +3726,7 @@ function restoreState() {
 /* ── Wire UI ── */
 bindThemeInputs();
 if (typeof wirePackageTransformUI === "function") wirePackageTransformUI();
+if (typeof wireOnAirTextUI === "function") wireOnAirTextUI();
 applyTheme(themeFromUI());
 setLogo(EMBEDDED_LOGO);
 renderList();
@@ -3631,15 +3842,22 @@ $("btnApplyEdit").onclick = () => {
   p.name = p.legalName;
   const dn = ($("editDisplayName") && $("editDisplayName").value.trim()) || "";
   p.displayName = dn;
+  p.nameOverride = dn;
   p.displayNameLocked = !!dn; // manual edit locks nickname across live updates
   if (!dn) applyNameExceptions(p); // re-apply Clif etc. if cleared
   p.baseTitle = $("editTitle").value.trim();
   p.title = p.baseTitle;
+  const to = ($("editTitleOverride") && $("editTitleOverride").value.trim()) || "";
+  p.titleOverride = to;
+  p.dualTitle = to;
   p.group = $("editGroup").value.trim();
   p.viceMayor = !!($("editViceMayor") && $("editViceMayor").checked);
   p.viceMayorForm = ($("editViceMayorForm") && $("editViceMayorForm").value) || "short";
   p.viceMayorCustom = ($("editViceMayorCustom") && $("editViceMayorCustom").value.trim()) || "";
-  renderList(); playIn(); persistState();
+  renderList();
+  if (typeof renderPerson === "function") renderPerson();
+  playIn();
+  persistState();
 };
 $("btnAddPerson").onclick = () => {
   const p = {
@@ -3844,11 +4062,13 @@ function measureTextWidth(ctx, text, font) {
 
 
 
-/** Dual title plate — full on-air title (not seat-only / short labels). Uppercase for package. */
+/** Dual title plate — full on-air title (override or roster). Uppercase for package. */
 function dualTitleShort(p) {
   if (!p) return "";
-  // Explicit dual override only when set
-  if (p.dualTitle) return String(p.dualTitle).toUpperCase();
+  // dualTitle / titleOverride / displayTitle — never auto-shorten to SEAT only
+  if (p.dualTitle && String(p.dualTitle).trim()) {
+    return String(p.dualTitle).replace(/\s*[·|]\s*/g, " · ").replace(/\s+/g, " ").trim().toUpperCase();
+  }
   const full = (typeof displayTitle === "function" ? displayTitle(p) : (p.title || p.baseTitle || ""));
   return String(full || "")
     .replace(/\s*[·|]\s*/g, " · ")
@@ -3859,7 +4079,7 @@ function dualTitleShort(p) {
 
 function dualNameText(p) {
   const n = (typeof displayNameOf === "function" ? displayNameOf(p) : (p && p.name)) || "";
-  // keep Esq. style as ", ESQ." in caps
+  // keep Esq. style as ", ESQ." in caps — use override text as-is then uppercase
   return String(n)
     .replace(/,?\s*Esq\.?/gi, ", ESQ.")
     .replace(/,?\s*MMC\.?/gi, "")
