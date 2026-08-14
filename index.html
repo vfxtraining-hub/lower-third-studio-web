@@ -134,8 +134,11 @@
     --panel-pad-y: 18px;
     --accent-w: 5px;
     --logo-size: 92px;
-    --l3-left: 72px;
-    --l3-bottom: 80px;
+    --l3-left: 64px;
+    --l3-bottom: 72px;
+    --l3-user-scale: 0.72;
+    --l3-nudge-x: 0px;
+    --l3-nudge-y: 0px;
     --gap-logo: 16px;
     --shadow: 0 8px 28px rgba(0,0,0,.45);
   }
@@ -267,6 +270,9 @@
   }
   .stage {
     --l3-pkg-scale: 1;
+    --l3-user-scale: 0.72;
+    --l3-nudge-x: 0px;
+    --l3-nudge-y: 0px;
     position: relative;
     width: min(100%, 1100px);
     aspect-ratio: 16 / 9;
@@ -298,26 +304,28 @@
   }
   .l3 {
     position: absolute;
-    left: var(--l3-left);
-    bottom: var(--l3-bottom);
+    left: calc(var(--l3-left) + var(--l3-nudge-x, 0px));
+    bottom: calc(var(--l3-bottom) + var(--l3-nudge-y, 0px));
     display: flex; align-items: center; gap: var(--gap-logo);
-    max-width: calc(100% - var(--l3-left) - 48px);
-    transform: translateY(12px);
+    max-width: none;
+    /* Uniform package transform — size × portrait factor; origin bottom-left */
+    transform: scale(calc(var(--l3-pkg-scale, 1) * var(--l3-user-scale, 1)));
+    transform-origin: left bottom;
     opacity: 0;
   }
   .l3.show {
-    animation: l3In .55s cubic-bezier(.2,.8,.2,1) forwards;
+    animation: l3In .45s cubic-bezier(.2,.8,.2,1) forwards;
   }
   .l3.hide {
-    animation: l3Out .35s ease-in forwards;
+    animation: l3Out .32s ease-in forwards;
   }
   @keyframes l3In {
-    from { opacity: 0; transform: translateY(18px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
   @keyframes l3Out {
-    from { opacity: 1; transform: translateY(0); }
-    to   { opacity: 0; transform: translateY(10px); }
+    from { opacity: 1; }
+    to   { opacity: 0; }
   }
   .logo-box {
     width: var(--logo-size); height: var(--logo-size);
@@ -698,25 +706,22 @@
 
 
   /*
-   * 9:16 — uniform package scale for ALL templates (no per-element clamps, no … ellipsis).
-   * Transform-origin bottom-left keeps the L3 planted in the safe corner.
+   * 9:16 — multiplies user package scale (--l3-user-scale) by portrait factor.
+   * Position still comes from Package left/bottom tools (same for every title).
    */
   .stage.portrait {
     --l3-pkg-scale: 0.70;
   }
   .stage.portrait .l3 {
-    left: 5.5% !important;
     right: auto !important;
-    bottom: 5.5% !important;
     max-width: none !important;
     width: max-content !important;
     gap: var(--gap-logo);
-    transform: scale(var(--l3-pkg-scale, 0.70)) !important;
+    transform: scale(calc(var(--l3-pkg-scale, 0.70) * var(--l3-user-scale, 1))) !important;
     transform-origin: left bottom !important;
   }
   .stage.portrait .l3.show,
   .stage.portrait .l3.hide {
-    /* package scale wins over l3In translate — hold stays scaled */
     animation: none !important;
     opacity: 1 !important;
   }
@@ -1017,15 +1022,13 @@
     gap: 0;
     overflow: visible !important;
     opacity: 1 !important;
-    transform: scale(var(--l3-pkg-scale, 1)) !important;
+    transform: scale(calc(var(--l3-pkg-scale, 1) * var(--l3-user-scale, 1))) !important;
     transform-origin: left bottom !important;
     max-width: none;
   }
   .stage.portrait .l3[data-style="aventura-dual"] {
-    transform: scale(var(--l3-pkg-scale, 0.70)) !important;
+    transform: scale(calc(var(--l3-pkg-scale, 0.70) * var(--l3-user-scale, 1))) !important;
     transform-origin: left bottom !important;
-    left: 5.5% !important;
-    bottom: 5.5% !important;
   }
   .l3[data-style="aventura-dual"].show,
   .l3[data-style="aventura-dual"].hide {
@@ -1656,6 +1659,33 @@
     <p class="hint" style="margin:0">Animated logo always uses <b>play once → hold last</b> unless you change it in Advanced.</p>
   </div>
 
+  <div class="sec pkg-tools" id="pkgTools" style="margin-bottom:12px">
+    <h2>Package size &amp; position</h2>
+    <p class="hint" style="margin:0 0 10px">Scales and moves the <b>whole</b> lower third for <b>every person</b> in this style. Live preview · saved with the template.</p>
+    <label class="field">Size <span id="pkgScaleVal" style="float:right;color:var(--ui-muted)">72%</span>
+      <input type="range" id="pkgScale" min="0.40" max="1.15" step="0.01" value="0.72" />
+    </label>
+    <label class="field">From left <span id="pkgLeftVal" style="float:right;color:var(--ui-muted)">64px</span>
+      <input type="range" id="pkgLeft" min="12" max="320" step="1" value="64" />
+    </label>
+    <label class="field">From bottom <span id="pkgBottomVal" style="float:right;color:var(--ui-muted)">72px</span>
+      <input type="range" id="pkgBottom" min="12" max="360" step="1" value="72" />
+    </label>
+    <div class="row2">
+      <label class="field">Nudge X
+        <input type="number" id="pkgNudgeX" min="-200" max="400" step="1" value="0" />
+      </label>
+      <label class="field">Nudge Y
+        <input type="number" id="pkgNudgeY" min="-200" max="400" step="1" value="0" />
+      </label>
+    </div>
+    <div class="stack-btns" style="margin-top:8px">
+      <button type="button" class="btn" id="pkgApplyAll" style="flex:1" title="Confirm save for this style">Save for this style</button>
+      <button type="button" class="btn ghost" id="pkgReset" style="flex:1">Reset</button>
+    </div>
+    <p class="hint" id="pkgStatus" style="margin:8px 0 0">Applies to all titles using the active style (Civic / Dual).</p>
+  </div>
+
   <input type="search" class="simple-search" id="peopleSearch" placeholder="Search name or title…" autocomplete="off" />
 
   <div class="stack-btns" style="margin-bottom:8px">
@@ -1937,18 +1967,22 @@
   </div>
 
   <div class="sec">
-    <h2>Layout</h2>
+    <h2>Package size &amp; position</h2>
+    <p class="hint">Same controls as the left panel — uniform scale/position for every title in this style. Prefer those sliders; they update the stage live.</p>
+    <label class="field">Size (same as Package tool)
+      <input type="range" id="exportScale" min="0.40" max="1.15" step="0.01" value="0.72" />
+    </label>
     <div class="row2">
       <label class="field">Left
-        <input type="number" id="l3Left" min="16" max="200" value="72" />
+        <input type="number" id="l3Left" min="12" max="320" value="64" />
       </label>
       <label class="field">Bottom
-        <input type="number" id="l3Bottom" min="16" max="240" value="80" />
+        <input type="number" id="l3Bottom" min="12" max="360" value="72" />
       </label>
-      <label class="field">Pad X
+      <label class="field">Pad X (civic panel)
         <input type="number" id="padX" min="8" max="64" value="28" />
       </label>
-      <label class="field">Pad Y
+      <label class="field">Pad Y (civic panel)
         <input type="number" id="padY" min="4" max="48" value="18" />
       </label>
       <label class="field">Radius
@@ -1979,9 +2013,7 @@
           <input type="number" id="exportH" min="360" max="2160" value="1080" />
         </label>
       </div>
-      <label class="field">Scale (L3 size vs frame)
-        <input type="range" id="exportScale" min="0.55" max="1.35" step="0.01" value="1" />
-      </label>
+      <p class="hint" style="margin:0 0 8px">Export uses the same <b>Package size</b> as the stage (left panel). Change size there — it applies to every title.</p>
       <label class="field" style="flex-direction:row;align-items:center;gap:8px;display:flex">
         <input type="checkbox" id="exportHoldLogo" checked />
         Use hold logo frame (not mid-animation) for stills
@@ -2507,10 +2539,156 @@ function applyStyleLibrary(id, { play = true } = {}) {
   renderStyleLibrary();
   if (typeof fitText === "function") fitText();
   if (typeof renderPerson === "function") renderPerson();
+  // Load saved package scale/position for this style (all titles share it)
+  if (typeof loadAndApplyPackageTransform === "function") loadAndApplyPackageTransform(st.id);
   if (typeof applyPortraitPackageScale === "function") applyPortraitPackageScale();
   if (play && typeof playIn === "function") playIn();
   if ($("statusPill")) $("statusPill").textContent = "Style: " + st.name + " · logo once→hold";
   if (typeof persistState === "function") persistState();
+}
+
+/* ── Package size & position (uniform for every title in a style) ── */
+const PKG_TRANSFORM_KEY = "l3studio.pkgTransform.v1";
+
+function defaultPackageTransform(styleId) {
+  if (styleId === "aventura-dual") {
+    return { scale: 0.68, left: 56, bottom: 64, nudgeX: 0, nudgeY: 0 };
+  }
+  return { scale: 0.82, left: 72, bottom: 80, nudgeX: 0, nudgeY: 0 };
+}
+
+function readPackageTransformUI() {
+  return {
+    scale: +(($("pkgScale") && $("pkgScale").value) || ($("exportScale") && $("exportScale").value) || 0.72),
+    left: +(($("pkgLeft") && $("pkgLeft").value) || ($("l3Left") && $("l3Left").value) || 64),
+    bottom: +(($("pkgBottom") && $("pkgBottom").value) || ($("l3Bottom") && $("l3Bottom").value) || 72),
+    nudgeX: +(($("pkgNudgeX") && $("pkgNudgeX").value) || 0),
+    nudgeY: +(($("pkgNudgeY") && $("pkgNudgeY").value) || 0),
+  };
+}
+
+function writePackageTransformUI(t) {
+  if (!t) return;
+  if ($("pkgScale")) $("pkgScale").value = t.scale;
+  if ($("exportScale")) $("exportScale").value = t.scale;
+  if ($("pkgLeft")) $("pkgLeft").value = t.left;
+  if ($("l3Left")) $("l3Left").value = t.left;
+  if ($("pkgBottom")) $("pkgBottom").value = t.bottom;
+  if ($("l3Bottom")) $("l3Bottom").value = t.bottom;
+  if ($("pkgNudgeX")) $("pkgNudgeX").value = t.nudgeX || 0;
+  if ($("pkgNudgeY")) $("pkgNudgeY").value = t.nudgeY || 0;
+  if ($("pkgScaleVal")) $("pkgScaleVal").textContent = Math.round(t.scale * 100) + "%";
+  if ($("pkgLeftVal")) $("pkgLeftVal").textContent = Math.round(t.left) + "px";
+  if ($("pkgBottomVal")) $("pkgBottomVal").textContent = Math.round(t.bottom) + "px";
+}
+
+function applyPackageTransform(t, { save = false, status = true } = {}) {
+  t = t || readPackageTransformUI();
+  t.scale = Math.max(0.35, Math.min(1.25, +t.scale || 1));
+  t.left = Math.max(0, Math.min(480, +t.left || 0));
+  t.bottom = Math.max(0, Math.min(600, +t.bottom || 0));
+  t.nudgeX = +t.nudgeX || 0;
+  t.nudgeY = +t.nudgeY || 0;
+
+  const root = document.documentElement;
+  const stage = $("stage");
+  root.style.setProperty("--l3-user-scale", String(t.scale));
+  root.style.setProperty("--l3-left", t.left + "px");
+  root.style.setProperty("--l3-bottom", t.bottom + "px");
+  root.style.setProperty("--l3-nudge-x", t.nudgeX + "px");
+  root.style.setProperty("--l3-nudge-y", t.nudgeY + "px");
+  if (stage) {
+    stage.style.setProperty("--l3-user-scale", String(t.scale));
+    stage.style.setProperty("--l3-nudge-x", t.nudgeX + "px");
+    stage.style.setProperty("--l3-nudge-y", t.nudgeY + "px");
+  }
+  // Keep #l3 free of inline transform so CSS package scale always wins
+  const l3 = $("l3");
+  if (l3) {
+    l3.style.transform = "";
+    l3.style.left = "";
+    l3.style.bottom = "";
+  }
+
+  writePackageTransformUI(t);
+
+  // Theme / export path
+  if ($("exportScale")) $("exportScale").value = t.scale;
+  if (typeof themeFromUI === "function" && typeof applyTheme === "function") {
+    // Only push layout pieces so dual colors/fonts stay intact
+    try {
+      root.style.setProperty("--l3-left", t.left + "px");
+      root.style.setProperty("--l3-bottom", t.bottom + "px");
+    } catch (_) {}
+  }
+
+  if (save) {
+    try {
+      const all = JSON.parse(localStorage.getItem(PKG_TRANSFORM_KEY) || "{}");
+      const sid = (typeof activeStyleId !== "undefined" ? activeStyleId : "civic") || "civic";
+      all[sid] = t;
+      localStorage.setItem(PKG_TRANSFORM_KEY, JSON.stringify(all));
+    } catch (_) {}
+    if (typeof persistState === "function") persistState();
+  }
+
+  if (status) {
+    const sid = (typeof activeStyleId !== "undefined" ? activeStyleId : "civic") || "civic";
+    const label = (typeof STYLE_LIBRARY !== "undefined" && STYLE_LIBRARY[sid]) ? STYLE_LIBRARY[sid].name : sid;
+    const msg = "Package " + Math.round(t.scale * 100) + "% · L" + Math.round(t.left) + " B" + Math.round(t.bottom) + " · all titles · " + label;
+    if ($("pkgStatus")) $("pkgStatus").textContent = msg + (save ? " · saved" : " · live");
+    if ($("statusPill")) $("statusPill").textContent = msg;
+  }
+  return t;
+}
+
+function loadAndApplyPackageTransform(styleId) {
+  const sid = styleId || activeStyleId || "civic";
+  let t = defaultPackageTransform(sid);
+  try {
+    const all = JSON.parse(localStorage.getItem(PKG_TRANSFORM_KEY) || "{}");
+    if (all[sid]) t = { ...t, ...all[sid] };
+  } catch (_) {}
+  // Prefer theme packageScale if present (from preset)
+  try {
+    if ($("exportScale") && $("exportScale").dataset.fromTheme === "1") {
+      /* leave */
+    }
+  } catch (_) {}
+  writePackageTransformUI(t);
+  applyPackageTransform(t, { save: false, status: false });
+  if ($("pkgStatus")) {
+    const label = (STYLE_LIBRARY && STYLE_LIBRARY[sid]) ? STYLE_LIBRARY[sid].name : sid;
+    $("pkgStatus").textContent = "Style “" + label + "”: size/position apply to every title.";
+  }
+  return t;
+}
+
+function wirePackageTransformUI() {
+  const live = () => applyPackageTransform(readPackageTransformUI(), { save: true, status: true });
+  for (const id of ["pkgScale", "pkgLeft", "pkgBottom", "pkgNudgeX", "pkgNudgeY", "exportScale", "l3Left", "l3Bottom"]) {
+    const el = $(id);
+    if (!el || el._pkgWired) continue;
+    el._pkgWired = true;
+    el.addEventListener("input", live);
+    el.addEventListener("change", live);
+  }
+  if ($("pkgApplyAll") && !$("pkgApplyAll")._pkgWired) {
+    $("pkgApplyAll")._pkgWired = true;
+    $("pkgApplyAll").onclick = () => {
+      const t = applyPackageTransform(readPackageTransformUI(), { save: true, status: true });
+      if ($("statusPill")) $("statusPill").textContent = "Saved package " + Math.round(t.scale * 100) + "% for all titles in this style";
+    };
+  }
+  if ($("pkgReset") && !$("pkgReset")._pkgWired) {
+    $("pkgReset")._pkgWired = true;
+    $("pkgReset").onclick = () => {
+      const sid = activeStyleId || "civic";
+      const t = defaultPackageTransform(sid);
+      writePackageTransformUI(t);
+      applyPackageTransform(t, { save: true, status: true });
+    };
+  }
 }
 
 const STATE_KEY = "l3studio.state.v1";
@@ -2590,6 +2768,9 @@ function themeFromUI() {
     padY: $("padY").value + "px",
     radius: $("radius").value + "px",
     accentW: $("accentW").value + "px",
+    packageScale: String(($("pkgScale") && $("pkgScale").value) || ($("exportScale") && $("exportScale").value) || "0.72"),
+    packageNudgeX: String(($("pkgNudgeX") && $("pkgNudgeX").value) || "0"),
+    packageNudgeY: String(($("pkgNudgeY") && $("pkgNudgeY").value) || "0"),
   };
 }
 
@@ -2736,6 +2917,19 @@ function applyTheme(t) {
   for (const [k, css] of Object.entries(map)) {
     if (t[k] != null) root.style.setProperty(css, t[k]);
   }
+  // Live package transform (scale / position) — works for Civic + Dual
+  if (t.packageScale != null || t.l3Left != null || t.l3Bottom != null || t.packageNudgeX != null) {
+    if (typeof applyPackageTransform === "function") {
+      const cur = (typeof readPackageTransformUI === "function") ? readPackageTransformUI() : {};
+      applyPackageTransform({
+        scale: t.packageScale != null ? parseFloat(t.packageScale) : cur.scale,
+        left: t.l3Left != null ? parseFloat(String(t.l3Left).replace("px", "")) : cur.left,
+        bottom: t.l3Bottom != null ? parseFloat(String(t.l3Bottom).replace("px", "")) : cur.bottom,
+        nudgeX: t.packageNudgeX != null ? parseFloat(t.packageNudgeX) : cur.nudgeX,
+        nudgeY: t.packageNudgeY != null ? parseFloat(t.packageNudgeY) : cur.nudgeY,
+      }, { save: false, status: false });
+    }
+  }
   // sync inputs when loading preset
   if (t.panelTop) $("cPanelTop").value = t.panelTop;
   if (t.panelBot) $("cPanelBot").value = t.panelBot;
@@ -2753,6 +2947,15 @@ function applyTheme(t) {
   if (t.gapLogo) $("gapLogo").value = num(t.gapLogo);
   if (t.l3Left) $("l3Left").value = num(t.l3Left);
   if (t.l3Bottom) $("l3Bottom").value = num(t.l3Bottom);
+  if (t.packageScale != null) {
+    const s = parseFloat(t.packageScale);
+    if (!isNaN(s)) {
+      if ($("pkgScale")) $("pkgScale").value = s;
+      if ($("exportScale")) $("exportScale").value = s;
+    }
+  }
+  if (t.packageNudgeX != null && $("pkgNudgeX")) $("pkgNudgeX").value = num(t.packageNudgeX);
+  if (t.packageNudgeY != null && $("pkgNudgeY")) $("pkgNudgeY").value = num(t.packageNudgeY);
   if (t.padX) $("padX").value = num(t.padX);
   if (t.padY) $("padY").value = num(t.padY);
   if (t.radius) $("radius").value = num(t.radius);
@@ -2990,10 +3193,37 @@ function bindThemeInputs() {
     "l3Left","l3Bottom","padX","padY","radius","accentW"
   ];
   for (const id of ids) {
-    $(id).addEventListener("input", () => {
+    const el = $(id);
+    if (!el) continue;
+    el.addEventListener("input", () => {
+      // Layout sliders also drive package transform (live stage)
+      if (id === "l3Left" || id === "l3Bottom") {
+        if ($("pkgLeft") && id === "l3Left") $("pkgLeft").value = el.value;
+        if ($("pkgBottom") && id === "l3Bottom") $("pkgBottom").value = el.value;
+        if (typeof applyPackageTransform === "function") {
+          applyPackageTransform(readPackageTransformUI(), { save: true, status: true });
+        }
+      }
       applyTheme(themeFromUI());
+      // Dual uses fixed seal tokens; still refresh CSS vars for civic
+      if (id === "logoSize" && typeof isDualStyle === "function" && isDualStyle()) {
+        // Logo size on dual → treat as package scale nudge from default 148
+        const px = parseFloat(el.value) || 148;
+        const scale = Math.max(0.4, Math.min(1.15, px / 148));
+        if ($("pkgScale")) $("pkgScale").value = scale;
+        if (typeof applyPackageTransform === "function") {
+          applyPackageTransform(readPackageTransformUI(), { save: true, status: true });
+        }
+      }
       fitText();
       persistState();
+      // Force visible hold state so Advanced changes are obvious
+      const l3 = $("l3");
+      if (l3) {
+        l3.classList.add("show");
+        l3.style.opacity = "1";
+        l3.style.transform = "";
+      }
     });
   }
 }
@@ -3190,12 +3420,16 @@ function currentPresetPayload(name, { forDownload = false } = {}) {
   const logo = forDownload
     ? { logoRef: "inline", logoDataUrl: logoDataUrl, logoOmitted: false }
     : logoRefForStorage(logoDataUrl);
+  const pkg = (typeof readPackageTransformUI === "function")
+    ? readPackageTransformUI()
+    : { scale: 0.72, left: 64, bottom: 72, nudgeX: 0, nudgeY: 0 };
   return {
     id: uid(),
     name: name || "Untitled",
     updated: Date.now(),
     sourceUrl: $("sourceUrl").value,
     theme: themeFromUI(),
+    packageTransform: pkg,
     logoRef: logo.logoRef,
     logoDataUrl: logo.logoDataUrl,
     logoOmitted: !!logo.logoOmitted,
@@ -3219,6 +3453,18 @@ function applyPreset(pr) {
       applyStyleLibrary(pr.styleId, { play: false });
     }
     if (pr.theme) applyTheme(pr.theme);
+    if (pr.packageTransform && typeof applyPackageTransform === "function") {
+      writePackageTransformUI(pr.packageTransform);
+      applyPackageTransform(pr.packageTransform, { save: true, status: false });
+    } else if (pr.theme && (pr.theme.packageScale != null || pr.theme.l3Left) && typeof applyPackageTransform === "function") {
+      applyPackageTransform({
+        scale: parseFloat(pr.theme.packageScale) || 0.72,
+        left: parseFloat(String(pr.theme.l3Left || "64").replace("px", "")) || 64,
+        bottom: parseFloat(String(pr.theme.l3Bottom || "72").replace("px", "")) || 72,
+        nudgeX: parseFloat(pr.theme.packageNudgeX) || 0,
+        nudgeY: parseFloat(pr.theme.packageNudgeY) || 0,
+      }, { save: true, status: false });
+    }
     if ($("logoPlayMode")) $("logoPlayMode").value = pr.logoPlayMode || "once";
     // Logo: only replace if we have a resolvable ref — never blank the logo
     try {
@@ -3269,6 +3515,7 @@ function restoreState() {
 
 /* ── Wire UI ── */
 bindThemeInputs();
+if (typeof wirePackageTransformUI === "function") wirePackageTransformUI();
 applyTheme(themeFromUI());
 setLogo(EMBEDDED_LOGO);
 renderList();
@@ -3287,6 +3534,7 @@ try {
   } catch (_) {}
   renderStyleLibrary();
   applyStyleLibrary(sid, { play: true });
+  if (typeof loadAndApplyPackageTransform === "function") loadAndApplyPackageTransform(sid);
 } catch (e) { console.warn("style lib init", e); }
 
 $("btnPlay").onclick = () => playIn();
