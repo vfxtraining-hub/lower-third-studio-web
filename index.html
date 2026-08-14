@@ -1093,7 +1093,44 @@ const STATE_KEY = "l3studio.state.v1";
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
 
+
+/* Early name helpers (must exist before people init) */
+const NAME_EXCEPTIONS = {
+  "clifford b. ain": { displayName: "Clif B. Ain", note: "Goes by Clif" },
+  "clifford ain": { displayName: "Clif B. Ain", note: "Goes by Clif" },
+};
+function normNameKey(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/,?\s*(esq\.?|mmc|phd|jr\.?|sr\.?)\s*$/i, "")
+    .replace(/[^a-z0-9\s.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function applyNameExceptions(p) {
+  if (!p) return p;
+  if (p.displayNameLocked && p.displayName) return p;
+  const key = normNameKey(p.name || p.legalName || "");
+  const ex = NAME_EXCEPTIONS[key];
+  if (ex) {
+    if (!p.displayName || p.displayName === p.name) p.displayName = ex.displayName;
+    p.nicknameNote = ex.note;
+  }
+  if (!p.displayName && /clifford/i.test(p.name || "") && /\bain\b/i.test(p.name || "")) {
+    p.displayName = "Clif B. Ain";
+    p.nicknameNote = "Goes by Clif";
+  }
+  return p;
+}
+function displayNameOf(p) {
+  if (!p) return "";
+  if (p.displayName && String(p.displayName).trim()) return String(p.displayName).trim();
+  return p.name || "";
+}
+
 let people = normalizePeople(structuredClone(EMBEDDED_PEOPLE));
+people.forEach(applyNameExceptions);
+
 let selectedId = people[0]?.id || null;
 let logoDataUrl = EMBEDDED_LOGO;
 let solidStage = false;
@@ -1382,7 +1419,6 @@ function normalizePeople(list) {
     if (q.viceMayorCustom == null) q.viceMayorCustom = "";
     if (q.displayName == null) q.displayName = "";
     if (q.displayNameLocked == null) q.displayNameLocked = false;
-    if (typeof applyNameExceptions === "function") applyNameExceptions(q);
     return q;
   });
 }
@@ -2991,7 +3027,7 @@ async function decodeLogoFrames(dataUrl) {
   return { frames: [img], fps: 24, animated: false };
 }
 
-async function setLogo(url) {
+setLogo = async function(url) {
   stopLogoAnim();
   logoDataUrl = url;
   logoAnim.sourceUrl = url;
@@ -3162,7 +3198,7 @@ stopLogoAnim = function() {
   }
 };
 
-function replayLogo() {
+replayLogo = function() {
   const mode = getLogoPlayMode();
   logoAnim.mode = mode;
   if (logoAnim.video) {
@@ -3338,47 +3374,8 @@ function setAppMode(mode) {
 /* ── Display names (nicknames) + live source update ── */
 
 /** Built-in nickname exceptions (applied after scrape if no manual override). */
-const NAME_EXCEPTIONS = {
-  // key: normalized legal name fragment → preferred on-air first name
-  "clifford b. ain": { displayName: "Clif B. Ain", note: "Goes by Clif" },
-  "clifford ain": { displayName: "Clif B. Ain", note: "Goes by Clif" },
-};
+/* name helpers defined earlier */
 
-function normNameKey(s) {
-  return String(s || "")
-    .toLowerCase()
-    .replace(/,?\s*(esq\.?|mmc|phd|jr\.?|sr\.?)\s*$/i, "")
-    .replace(/[^a-z0-9\s.]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function applyNameExceptions(p) {
-  if (!p) return p;
-  // Manual override always wins
-  if (p.displayNameLocked && p.displayName) return p;
-  const key = normNameKey(p.name || p.legalName || "");
-  const ex = NAME_EXCEPTIONS[key];
-  if (ex) {
-    if (!p.displayName || p.displayName === p.name) {
-      p.displayName = ex.displayName;
-    }
-    p.nicknameNote = ex.note;
-  }
-  // Also match last-name Ain + first Clifford
-  if (!p.displayName && /clifford/i.test(p.name || "") && /\bain\b/i.test(p.name || "")) {
-    p.displayName = "Clif B. Ain";
-    p.nicknameNote = "Goes by Clif";
-  }
-  return p;
-}
-
-/** On-air name for preview/export. */
-function displayNameOf(p) {
-  if (!p) return "";
-  if (p.displayName && String(p.displayName).trim()) return String(p.displayName).trim();
-  return p.name || "";
-}
 
 function slugPersonId(name) {
   return String(name || "person")
