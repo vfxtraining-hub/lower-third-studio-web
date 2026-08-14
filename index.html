@@ -477,13 +477,161 @@
   .stage:not(.portrait) .name,
   .stage:not(.portrait) .title { overflow: hidden; text-overflow: ellipsis; }
 
+
+  /* ===== DESIGN WIZARD ===== */
+  #wizard {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0a0d12;
+    color: var(--ui-text);
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #wizard.open { display: flex; }
+  .wiz-top {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; border-bottom: 1px solid #2a3340;
+    background: #12171f;
+  }
+  .wiz-top h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  .wiz-steps {
+    display: flex; gap: 6px; flex: 1; flex-wrap: wrap; justify-content: center;
+  }
+  .wiz-step-dot {
+    font-size: 11px; padding: 5px 10px; border-radius: 999px;
+    border: 1px solid #2a3340; color: #8b9bb0; background: transparent;
+  }
+  .wiz-step-dot.on { background: #3d8bfd; color: #fff; border-color: #3d8bfd; }
+  .wiz-step-dot.done { border-color: #3d8bfd66; color: #c5d4ea; }
+  .wiz-body {
+    flex: 1; overflow: auto; padding: 20px 18px 100px;
+    max-width: 1200px; width: 100%; margin: 0 auto;
+  }
+  .wiz-foot {
+    position: sticky; bottom: 0;
+    display: flex; gap: 10px; align-items: center;
+    padding: 12px 16px; border-top: 1px solid #2a3340;
+    background: #12171fcc; backdrop-filter: blur(10px);
+  }
+  .wiz-foot .spacer { flex: 1; }
+  .wiz-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .wiz-option {
+    border: 2px solid #2a3340;
+    border-radius: 12px;
+    background: #161b22;
+    cursor: pointer;
+    overflow: hidden;
+    text-align: left;
+    padding: 0;
+    color: inherit;
+    transition: border-color .15s, transform .15s;
+  }
+  .wiz-option:hover { border-color: #3d8bfd88; transform: translateY(-1px); }
+  .wiz-option.selected { border-color: #3d8bfd; box-shadow: 0 0 0 1px #3d8bfd; }
+  .wiz-thumb {
+    height: 110px; position: relative;
+    background:
+      linear-gradient(45deg, #222 25%, transparent 25%),
+      linear-gradient(-45deg, #222 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #222 75%),
+      linear-gradient(-45deg, transparent 75%, #222 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-color: #1a1a1a;
+    overflow: hidden;
+  }
+  .wiz-thumb .mini-l3 {
+    position: absolute; left: 10px; right: 10px; bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .wiz-thumb .mini-logo {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: radial-gradient(circle at 40% 40%, #6af, #14a, #023);
+    flex: 0 0 28px;
+  }
+  .wiz-thumb .mini-card {
+    flex: 1; min-width: 0; border-radius: 5px; padding: 6px 8px 6px 10px;
+    position: relative; overflow: hidden;
+  }
+  .wiz-thumb .mini-card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  }
+  .wiz-thumb .mini-name {
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .wiz-thumb .mini-title {
+    font-size: 9px; opacity: .85; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
+  }
+  .wiz-option .meta { padding: 8px 10px 10px; }
+  .wiz-option .meta .t { font-size: 12px; font-weight: 650; }
+  .wiz-option .meta .s { font-size: 10px; color: #8b9bb0; margin-top: 2px; }
+  .wiz-panel {
+    background: #161b22; border: 1px solid #2a3340;
+    border-radius: 12px; padding: 16px; margin-bottom: 14px;
+  }
+  .wiz-panel h2 { margin: 0 0 8px; font-size: 16px; }
+  .wiz-panel p { margin: 0 0 12px; color: #8b9bb0; font-size: 13px; line-height: 1.4; }
+  .wiz-source-tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .wiz-source-tabs button {
+    border: 1px solid #2a3340; background: #0e1116; color: #c5d4ea;
+    border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 12px; font-weight: 600;
+  }
+  .wiz-source-tabs button.on { background: #3d8bfd; color: #fff; border-color: #3d8bfd; }
+  .wiz-field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 11px; color: #8b9bb0; }
+  .wiz-field input[type=text], .wiz-field input[type=url], .wiz-field textarea, .wiz-field select {
+    background: #0e1116; color: #e8eef6; border: 1px solid #2a3340;
+    border-radius: 8px; padding: 9px 10px; font-size: 13px; width: 100%;
+  }
+  .wiz-field textarea { min-height: 100px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .wiz-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+  .wiz-swatch {
+    width: 42px; height: 42px; border-radius: 10px; border: 2px solid #2a3340;
+    cursor: pointer; padding: 0;
+  }
+  .wiz-swatch.on { border-color: #fff; box-shadow: 0 0 0 2px #3d8bfd; }
+  .wiz-color-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .wiz-color-row label { font-size: 11px; color: #8b9bb0; display: grid; gap: 4px; }
+  .wiz-color-row input[type=color] {
+    width: 100%; height: 36px; border: 1px solid #2a3340; border-radius: 8px; background: #0e1116;
+  }
+  .btn-wiz {
+    border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 650; font-size: 13px; cursor: pointer;
+  }
+  .btn-wiz.primary { background: #3d8bfd; color: #fff; }
+  .btn-wiz.ghost { background: transparent; color: #e8eef6; border: 1px solid #2a3340; }
+  .btn-wiz:disabled { opacity: .45; cursor: not-allowed; }
+  body.wizard-open { overflow: hidden; }
+
 </style>
 </head>
 <body class="mode-simple">
+
+<div id="wizard" aria-modal="true" role="dialog" aria-label="Design wizard">
+  <div class="wiz-top">
+    <h1>New lower-third design</h1>
+    <div class="wiz-steps" id="wizSteps"></div>
+    <button type="button" class="btn-wiz ghost" id="wizCancel">Cancel</button>
+  </div>
+  <div class="wiz-body" id="wizBody"></div>
+  <div class="wiz-foot">
+    <button type="button" class="btn-wiz ghost" id="wizBack">Back</button>
+    <div class="spacer"></div>
+    <span id="wizStatus" style="font-size:12px;color:#8b9bb0"></span>
+    <button type="button" class="btn-wiz primary" id="wizNext">Continue</button>
+  </div>
+</div>
+
 <header>
   <h1>Lower Third Studio</h1>
   <span class="tag tag-long">cityofaventura.com · 30-Year logo</span>
   <div class="spacer"></div>
+  <button type="button" class="btn-wiz primary" id="btnNewDesign" style="padding:7px 12px;font-size:12px">+ New design</button>
   <div class="mode-toggle" title="Simple = fast results · Advanced = full controls">
     <button type="button" id="modeSimple" class="on">Simple</button>
     <button type="button" id="modeAdvanced">Advanced</button>
@@ -588,6 +736,7 @@
     <button type="button" class="btn-sec" data-aspect="9x16">9:16</button>
     <div class="grow"></div>
     <span class="pill" id="simpleExportHint" style="font-size:11px">Full quality PNG sequence + motion blur</span>
+    <button type="button" class="btn-sec" id="btnNewDesignSimple">+ New design</button>
     <button type="button" class="btn-sec" id="btnOpenAdvanced">More controls…</button>
   </div>
   <div class="toolbar toolbar-full">
@@ -3817,6 +3966,682 @@ if (typeof people !== "undefined") {
   people = normalizePeople(people);
   people.forEach(applyNameExceptions);
 }
+
+/* ── Design Wizard ── */
+const WIZ_STEPS = ["Source", "Colors", "Fonts", "Design", "Motion", "Done"];
+
+/** 25 design systems */
+const WIZ_DESIGNS = (() => {
+  const bases = [
+    { name: "Civic Navy Bar", accent: "left", radius: 6, logo: 92, dense: false, feel: "formal" },
+    { name: "Soft Pill", accent: "left", radius: 18, logo: 88, dense: false, feel: "soft" },
+    { name: "Glass Plate", accent: "left", radius: 10, logo: 90, dense: false, feel: "glass", alpha: 0.78 },
+    { name: "Bold Cap", accent: "top", radius: 4, logo: 86, dense: true, feel: "bold" },
+    { name: "Minimal Line", accent: "bottom", radius: 2, logo: 80, dense: true, feel: "minimal" },
+    { name: "Stack Name", accent: "left", radius: 8, logo: 96, dense: false, feel: "stack" },
+    { name: "Logo Lead Wide", accent: "left", radius: 8, logo: 108, dense: false, feel: "logo" },
+    { name: "Compact News", accent: "left", radius: 3, logo: 72, dense: true, feel: "news" },
+    { name: "Editorial Serif", accent: "left", radius: 6, logo: 90, dense: false, feel: "serif" },
+    { name: "Broadcast Strip", accent: "fullleft", radius: 0, logo: 84, dense: true, feel: "strip" },
+    { name: "Warm Gold Edge", accent: "left", radius: 6, logo: 92, dense: false, feel: "gold" },
+    { name: "Cool Steel", accent: "left", radius: 6, logo: 90, dense: false, feel: "steel" },
+    { name: "Deep Teal", accent: "left", radius: 8, logo: 90, dense: false, feel: "teal" },
+    { name: "Midnight Violet", accent: "left", radius: 10, logo: 88, dense: false, feel: "violet" },
+    { name: "Charcoal Clean", accent: "left", radius: 6, logo: 86, dense: true, feel: "charcoal" },
+    { name: "High Contrast", accent: "left", radius: 4, logo: 92, dense: false, feel: "contrast" },
+    { name: "Soft Shadow", accent: "left", radius: 12, logo: 94, dense: false, feel: "shadow" },
+    { name: "Thin Accent", accent: "left", radius: 6, logo: 88, dense: false, feel: "thin", accentW: 3 },
+    { name: "Thick Accent", accent: "left", radius: 6, logo: 90, dense: false, feel: "thick", accentW: 10 },
+    { name: "Offset Badge", accent: "left", radius: 14, logo: 100, dense: false, feel: "badge" },
+    { name: "Lower Tight", accent: "left", radius: 5, logo: 78, dense: true, feel: "tight", bottom: 48 },
+    { name: "Airy Wide", accent: "left", radius: 10, logo: 96, dense: false, feel: "airy", padX: 36 },
+    { name: "Social Vertical", accent: "left", radius: 10, logo: 84, dense: true, feel: "social" },
+    { name: "Ceremony", accent: "left", radius: 8, logo: 98, dense: false, feel: "ceremony" },
+    { name: "Utility HUD", accent: "left", radius: 2, logo: 76, dense: true, feel: "hud" },
+  ];
+  return bases.map((b, i) => ({
+    id: "d" + (i + 1),
+    index: i + 1,
+    ...b,
+    motionBias: b.feel, // used to rank animations
+  }));
+})();
+
+/** 25 motion recipes */
+const WIZ_ANIMS = [
+  { id: "a01", name: "Rise Soft", style: "slideUp", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["formal","soft","ceremony"] },
+  { id: "a02", name: "Rise Snappy", style: "slideUp", inDur: 0.35, outDur: 0.28, hold: 2.5, bias: ["news","bold","hud"] },
+  { id: "a03", name: "From Left", style: "slideLeft", inDur: 0.5, outDur: 0.35, hold: 3, bias: ["strip","news","formal"] },
+  { id: "a04", name: "From Right", style: "slideRight", inDur: 0.5, outDur: 0.35, hold: 3, bias: ["soft","glass"] },
+  { id: "a05", name: "Scale In", style: "scaleFade", inDur: 0.45, outDur: 0.35, hold: 3, bias: ["badge","logo","soft"] },
+  { id: "a06", name: "Mask Wipe", style: "maskWipe", inDur: 0.6, outDur: 0.4, hold: 3, bias: ["strip","news","hud"] },
+  { id: "a07", name: "Rise + Blur", style: "riseBlur", inDur: 0.65, outDur: 0.45, hold: 3, bias: ["glass","shadow","ceremony"] },
+  { id: "a08", name: "Logo First", style: "logoLead", inDur: 0.7, outDur: 0.45, hold: 3.2, bias: ["logo","badge","ceremony"] },
+  { id: "a09", name: "Soft Drop", style: "dropSoft", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["soft","airy","serif"] },
+  { id: "a10", name: "Cut Hard", style: "none", inDur: 0.05, outDur: 0.05, hold: 3, bias: ["minimal","hud","news"] },
+  { id: "a11", name: "Slow Prestige", style: "slideUp", inDur: 0.85, outDur: 0.55, hold: 3.5, bias: ["ceremony","formal","serif"] },
+  { id: "a12", name: "Quick Lower", style: "slideUp", inDur: 0.3, outDur: 0.25, hold: 2.2, bias: ["tight","social","news"] },
+  { id: "a13", name: "Left News Push", style: "slideLeft", inDur: 0.38, outDur: 0.3, hold: 2.8, bias: ["news","strip","bold"] },
+  { id: "a14", name: "Elegant Scale", style: "scaleFade", inDur: 0.6, outDur: 0.4, hold: 3.2, bias: ["serif","ceremony","gold"] },
+  { id: "a15", name: "Glass Drift", style: "riseBlur", inDur: 0.75, outDur: 0.5, hold: 3.2, bias: ["glass","violet","teal"] },
+  { id: "a16", name: "Stagger Broad", style: "logoLead", inDur: 0.8, outDur: 0.5, hold: 3.5, bias: ["logo","wide","airy"] },
+  { id: "a17", name: "Punch In", style: "scaleFade", inDur: 0.32, outDur: 0.28, hold: 2.5, bias: ["bold","contrast","thick"] },
+  { id: "a18", name: "Thin Slide", style: "slideLeft", inDur: 0.48, outDur: 0.35, hold: 3, bias: ["thin","minimal","steel"] },
+  { id: "a19", name: "Social Pop", style: "slideUp", inDur: 0.4, outDur: 0.32, hold: 2.6, bias: ["social","badge","soft"] },
+  { id: "a20", name: "HUD Tick", style: "maskWipe", inDur: 0.4, outDur: 0.3, hold: 2.5, bias: ["hud","minimal","steel"] },
+  { id: "a21", name: "Ceremony Rise", style: "slideUp", inDur: 0.9, outDur: 0.6, hold: 4, bias: ["ceremony","formal","gold"] },
+  { id: "a22", name: "Charcoal Ease", style: "slideUp", inDur: 0.5, outDur: 0.38, hold: 3, bias: ["charcoal","minimal","news"] },
+  { id: "a23", name: "Teal Float", style: "riseBlur", inDur: 0.7, outDur: 0.45, hold: 3, bias: ["teal","glass","soft"] },
+  { id: "a24", name: "Violet Soft", style: "dropSoft", inDur: 0.6, outDur: 0.42, hold: 3.1, bias: ["violet","soft","shadow"] },
+  { id: "a25", name: "Balanced Default", style: "slideUp", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["formal","soft","news"] },
+];
+
+function animsForDesign(design) {
+  const bias = design.motionBias || design.feel || "";
+  const scored = WIZ_ANIMS.map((a) => {
+    let score = 0;
+    if (a.bias && a.bias.includes(bias)) score += 10;
+    // slight variety hash
+    score += (a.id.charCodeAt(2) + design.index) % 3;
+    return { ...a, score };
+  });
+  scored.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  // still show all 25, just ordered for this design
+  return scored;
+}
+
+const FEEL_COLORS = {
+  formal: { panelTop: "#12305c", panelBot: "#0b1f3d", accent: "#c9a24a", name: "#ffffff", title: "#b8c9de" },
+  soft: { panelTop: "#1a3358", panelBot: "#12243f", accent: "#7eb6ff", name: "#ffffff", title: "#c9daf0" },
+  glass: { panelTop: "#1c2a3d", panelBot: "#121c2a", accent: "#9ec5ff", name: "#ffffff", title: "#c5d8f0", alpha: 0.8 },
+  bold: { panelTop: "#0d1b33", panelBot: "#071018", accent: "#ffcc33", name: "#ffffff", title: "#ffe9a8" },
+  minimal: { panelTop: "#1a1d22", panelBot: "#121418", accent: "#e8eef6", name: "#ffffff", title: "#b0b8c4" },
+  stack: { panelTop: "#14325f", panelBot: "#0c2244", accent: "#d4b06a", name: "#ffffff", title: "#d0dfef" },
+  logo: { panelTop: "#102a52", panelBot: "#0a1c38", accent: "#f0c14b", name: "#ffffff", title: "#c7d7ea" },
+  news: { panelTop: "#0f2748", panelBot: "#0a1830", accent: "#ff3b30", name: "#ffffff", title: "#d7e2f0" },
+  serif: { panelTop: "#1c2430", panelBot: "#121820", accent: "#d2b48c", name: "#f7f1e8", title: "#d9cfc0" },
+  strip: { panelTop: "#0b1f3d", panelBot: "#08162c", accent: "#00a3ff", name: "#ffffff", title: "#b8d9f5" },
+  gold: { panelTop: "#1a2740", panelBot: "#101a2c", accent: "#d4af37", name: "#fff8e7", title: "#e6d5a8" },
+  steel: { panelTop: "#2a3038", panelBot: "#1a1f26", accent: "#8fa4b8", name: "#ffffff", title: "#c5ced6" },
+  teal: { panelTop: "#0d3a3f", panelBot: "#08282c", accent: "#2dd4bf", name: "#ffffff", title: "#b6f0e8" },
+  violet: { panelTop: "#2a1f4a", panelBot: "#1a1433", accent: "#c4b5fd", name: "#ffffff", title: "#ddd6fe" },
+  charcoal: { panelTop: "#22262c", panelBot: "#16191d", accent: "#f5f5f5", name: "#ffffff", title: "#c8cdd3" },
+  contrast: { panelTop: "#000000", panelBot: "#111111", accent: "#ffffff", name: "#ffffff", title: "#dddddd" },
+  shadow: { panelTop: "#152238", panelBot: "#0d1626", accent: "#6ea8fe", name: "#ffffff", title: "#c5d7f2" },
+  thin: { panelTop: "#132844", panelBot: "#0c1a30", accent: "#9fb7d4", name: "#ffffff", title: "#c5d4e6" },
+  thick: { panelTop: "#10233f", panelBot: "#0a172b", accent: "#f5c542", name: "#ffffff", title: "#e8d9a8" },
+  badge: { panelTop: "#18355c", panelBot: "#10243f", accent: "#5b9dff", name: "#ffffff", title: "#cfe0f7" },
+  tight: { panelTop: "#122848", panelBot: "#0c1b33", accent: "#ff6b4a", name: "#ffffff", title: "#f0cfc6" },
+  airy: { panelTop: "#1b3358", panelBot: "#142640", accent: "#8ec5ff", name: "#ffffff", title: "#d2e6fb" },
+  social: { panelTop: "#1a1040", panelBot: "#120a2e", accent: "#ff4ecd", name: "#ffffff", title: "#f5c6ea" },
+  ceremony: { panelTop: "#141c2e", panelBot: "#0c1220", accent: "#e0c56e", name: "#fffaf0", title: "#e8d9b0" },
+  hud: { panelTop: "#0a1218", panelBot: "#050a0e", accent: "#39ff14", name: "#e8ffe8", title: "#9fdf9f" },
+};
+
+const FEEL_FONTS = {
+  serif: { name: FONT_PRESETS?.iowan || '"Iowan Old Style", Palatino, Georgia, serif', title: FONT_PRESETS?.avenir || 'system-ui, sans-serif', nameTrack: 0.02, titleTrack: 0.1 },
+  ceremony: { name: FONT_PRESETS?.iowan || '"Iowan Old Style", Palatino, Georgia, serif', title: FONT_PRESETS?.helvetica || '"Helvetica Neue", sans-serif', nameTrack: 0.03, titleTrack: 0.14 },
+  news: { name: FONT_PRESETS?.helvetica || '"Helvetica Neue", sans-serif', title: FONT_PRESETS?.helvetica || '"Helvetica Neue", sans-serif', nameTrack: 0.02, titleTrack: 0.08 },
+  hud: { name: FONT_PRESETS?.sf || "system-ui, sans-serif", title: FONT_PRESETS?.sf || "system-ui, sans-serif", nameTrack: 0.06, titleTrack: 0.14 },
+  social: { name: FONT_PRESETS?.avenir || '"Avenir Next", sans-serif', title: FONT_PRESETS?.avenir || '"Avenir Next", sans-serif', nameTrack: 0.03, titleTrack: 0.1 },
+  default: { name: FONT_PRESETS?.avenir || '"Avenir Next", "Helvetica Neue", sans-serif', title: FONT_PRESETS?.avenir || '"Avenir Next", "Helvetica Neue", sans-serif', nameTrack: 0.04, titleTrack: 0.12 },
+};
+
+const wiz = {
+  step: 0,
+  sourceType: "website", // website | gdoc | manual
+  sourceUrl: "https://www.cityofaventura.com/200/City-Commission",
+  manualText: "",
+  colors: { ...FEEL_COLORS.formal, alpha: 0.94 },
+  colorSource: "auto",
+  fonts: { ...FEEL_FONTS.default },
+  designId: null,
+  animId: null,
+  presetName: "",
+  peopleDraft: null,
+};
+
+function openWizard() {
+  document.getElementById("wizard")?.classList.add("open");
+  document.body.classList.add("wizard-open");
+  wiz.step = 0;
+  wiz.designId = null;
+  wiz.animId = null;
+  wiz.presetName = "";
+  wiz.peopleDraft = null;
+  wiz.sourceUrl = ($("sourceUrl") && $("sourceUrl").value) || wiz.sourceUrl;
+  // seed colors from current theme
+  try {
+    const t = themeFromUI();
+    wiz.colors = {
+      panelTop: t.panelTop, panelBot: t.panelBot, accent: t.accent,
+      name: t.nameColor, title: t.titleColor, alpha: parseFloat(t.panelAlpha) || 0.94,
+    };
+  } catch (_) {}
+  renderWizard();
+}
+
+function closeWizard() {
+  document.getElementById("wizard")?.classList.remove("open");
+  document.body.classList.remove("wizard-open");
+}
+
+function setWizStatus(msg) {
+  const el = document.getElementById("wizStatus");
+  if (el) el.textContent = msg || "";
+}
+
+function renderWizard() {
+  const steps = document.getElementById("wizSteps");
+  const body = document.getElementById("wizBody");
+  const next = document.getElementById("wizNext");
+  const back = document.getElementById("wizBack");
+  if (!body) return;
+  if (steps) {
+    steps.innerHTML = WIZ_STEPS.map((s, i) => {
+      const cls = i === wiz.step ? "on" : (i < wiz.step ? "done" : "");
+      return `<span class="wiz-step-dot ${cls}">${i + 1}. ${s}</span>`;
+    }).join("");
+  }
+  if (back) back.disabled = wiz.step === 0;
+  if (next) {
+    next.textContent = wiz.step === WIZ_STEPS.length - 1 ? "Open editor" : (wiz.step === WIZ_STEPS.length - 2 ? "Create preset" : "Continue");
+  }
+  setWizStatus("");
+  if (wiz.step === 0) body.innerHTML = wizStepSource();
+  else if (wiz.step === 1) body.innerHTML = wizStepColors();
+  else if (wiz.step === 2) body.innerHTML = wizStepFonts();
+  else if (wiz.step === 3) body.innerHTML = wizStepDesigns();
+  else if (wiz.step === 4) body.innerHTML = wizStepAnims();
+  else body.innerHTML = wizStepDone();
+  wireWizardStepDom();
+}
+
+function wizStepSource() {
+  return `<div class="wiz-panel">
+    <h2>Where do the names come from?</h2>
+    <p>Website, Google Doc link, or paste a list. You can live-update again later from the editor.</p>
+    <div class="wiz-source-tabs">
+      <button type="button" data-src="website" class="${wiz.sourceType==='website'?'on':''}">Website URL</button>
+      <button type="button" data-src="gdoc" class="${wiz.sourceType==='gdoc'?'on':''}">Google Doc</button>
+      <button type="button" data-src="manual" class="${wiz.sourceType==='manual'?'on':''}">Type / paste</button>
+    </div>
+    <div id="wizSourceFields">${wizSourceFieldsHtml()}</div>
+  </div>`;
+}
+
+function wizSourceFieldsHtml() {
+  if (wiz.sourceType === "manual") {
+    return `<label class="wiz-field">One person per line: <b>Name, Title</b>
+      <textarea id="wizManual">${wiz.manualText || "Howard S. Weinberg, Esq.,Mayor · City of Aventura\\nClif B. Ain,Commissioner · Seat 3 · City of Aventura"}</textarea>
+    </label>`;
+  }
+  if (wiz.sourceType === "gdoc") {
+    return `<label class="wiz-field">Google Doc link (must be shared “anyone with the link can view”)
+      <input type="url" id="wizUrl" value="${wiz.sourceUrl.includes('docs.google')?wiz.sourceUrl:''}" placeholder="https://docs.google.com/document/d/…/edit" />
+    </label>
+    <p style="font-size:12px;color:#8b9bb0">We’ll try to read the published text. If blocked, paste names on the Type / paste tab.</p>`;
+  }
+  return `<label class="wiz-field">Website URL
+    <input type="url" id="wizUrl" value="${wiz.sourceUrl || 'https://www.cityofaventura.com/200/City-Commission'}" />
+  </label>
+  <p style="font-size:12px;color:#8b9bb0">We’ll fetch the page and pick names/titles (same live-update engine as the editor).</p>`;
+}
+
+function wizStepColors() {
+  const c = wiz.colors;
+  const pals = Object.entries(FEEL_COLORS).slice(0, 12);
+  return `<div class="wiz-panel">
+    <h2>Colors</h2>
+    <p>Suggested from your source style or civic defaults. Click a swatch pack, then override any value.</p>
+    <div class="wiz-swatches" id="wizPalettes">
+      ${pals.map(([k, v]) => `<button type="button" class="wiz-swatch ${wiz.colorSource===k?'on':''}" data-pal="${k}" title="${k}"
+        style="background:linear-gradient(135deg,${v.panelTop},${v.panelBot});box-shadow:inset 4px 0 0 ${v.accent}"></button>`).join("")}
+    </div>
+    <div class="wiz-color-row">
+      <label>Panel top<input type="color" id="wizCTop" value="${c.panelTop}" /></label>
+      <label>Panel bottom<input type="color" id="wizCBot" value="${c.panelBot}" /></label>
+      <label>Accent<input type="color" id="wizCAccent" value="${c.accent}" /></label>
+      <label>Name<input type="color" id="wizCName" value="${c.name}" /></label>
+      <label>Title<input type="color" id="wizCTitle" value="${c.title}" /></label>
+    </div>
+    <div class="wiz-thumb" style="margin-top:14px;height:90px;border-radius:10px;overflow:hidden">
+      <div class="mini-l3">
+        <div class="mini-logo"></div>
+        <div class="mini-card" style="background:linear-gradient(180deg,${c.panelTop},${c.panelBot})">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${c.accent}"></div>
+          <div class="mini-name" style="color:${c.name}">Sample Name</div>
+          <div class="mini-title" style="color:${c.title}">Title · Organization</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function wizStepFonts() {
+  const f = wiz.fonts;
+  const packs = [
+    ["default", "Avenir / clean broadcast"],
+    ["news", "Helvetica news"],
+    ["serif", "Serif editorial"],
+    ["ceremony", "Ceremony"],
+    ["hud", "System HUD"],
+    ["social", "Social soft"],
+  ];
+  return `<div class="wiz-panel">
+    <h2>Fonts</h2>
+    <p>Pick a pack, then tweak stacks or tracking if you want.</p>
+    <div class="wiz-source-tabs" id="wizFontPacks">
+      ${packs.map(([k, lab]) => `<button type="button" data-fp="${k}" class="${(f.pack||'default')===k?'on':''}">${lab}</button>`).join("")}
+    </div>
+    <label class="wiz-field">Name font stack<input type="text" id="wizFontName" value="${(f.name||'').replace(/"/g,'&quot;')}" /></label>
+    <label class="wiz-field">Title font stack<input type="text" id="wizFontTitle" value="${(f.title||'').replace(/"/g,'&quot;')}" /></label>
+    <div class="wiz-color-row">
+      <label>Name tracking (em)<input type="number" id="wizNameTrack" min="-0.02" max="0.2" step="0.005" value="${f.nameTrack ?? 0.04}" /></label>
+      <label>Title tracking (em)<input type="number" id="wizTitleTrack" min="0" max="0.28" step="0.005" value="${f.titleTrack ?? 0.12}" /></label>
+    </div>
+  </div>`;
+}
+
+function designToThemeBits(d, colors, fonts) {
+  const alpha = d.alpha != null ? d.alpha : (colors.alpha != null ? colors.alpha : 0.94);
+  const accentW = d.accentW != null ? d.accentW : (d.feel === "thin" ? 3 : d.feel === "thick" ? 10 : 5);
+  return {
+    panelTop: colors.panelTop,
+    panelBot: colors.panelBot,
+    accent: colors.accent,
+    nameColor: colors.name,
+    titleColor: colors.title,
+    stageBg: "#1a1a1a",
+    panelAlpha: String(alpha),
+    fontName: fonts.name,
+    fontTitle: fonts.title,
+    nameSize: (d.dense ? 34 : 40) + "px",
+    titleSize: (d.dense ? 15 : 18) + "px",
+    nameTracking: (fonts.nameTrack ?? 0.04) + "em",
+    titleTracking: (fonts.titleTrack ?? 0.12) + "em",
+    nameWeight: d.feel === "bold" || d.feel === "contrast" ? "700" : "600",
+    titleWeight: "500",
+    logoSize: (d.logo || 92) + "px",
+    gapLogo: (d.dense ? 12 : 16) + "px",
+    l3Left: "72px",
+    l3Bottom: (d.bottom || 80) + "px",
+    padX: (d.padX || (d.dense ? 20 : 28)) + "px",
+    padY: (d.dense ? 12 : 18) + "px",
+    radius: (d.radius ?? 6) + "px",
+    accentW: accentW + "px",
+  };
+}
+
+function wizThumbHtml(d, colors, fonts) {
+  const t = designToThemeBits(d, colors, fonts);
+  return `<div class="wiz-thumb">
+    <div class="mini-l3">
+      <div class="mini-logo"></div>
+      <div class="mini-card" style="background:linear-gradient(180deg,${t.panelTop},${t.panelBot});border-radius:${t.radius}">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:${parseFloat(t.accentW)}px;background:${t.accent}"></div>
+        <div class="mini-name" style="color:${t.nameColor};font-family:${t.fontName}">Mayor Sample</div>
+        <div class="mini-title" style="color:${t.titleColor};font-family:${t.fontTitle}">Title · City</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function wizStepDesigns() {
+  return `<div class="wiz-panel">
+    <h2>Pick a design <span style="color:#8b9bb0;font-weight:500">(25)</span></h2>
+    <p>These apply your colors & fonts to different layouts. Click one to select.</p>
+  </div>
+  <div class="wiz-card-grid" id="wizDesignGrid">
+    ${WIZ_DESIGNS.map((d) => `
+      <button type="button" class="wiz-option ${wiz.designId===d.id?"selected":""}" data-design="${d.id}">
+        ${wizThumbHtml(d, wiz.colors, wiz.fonts)}
+        <div class="meta"><div class="t">${d.index}. ${d.name}</div><div class="s">${d.feel} · logo ${d.logo}px</div></div>
+      </button>`).join("")}
+  </div>`;
+}
+
+function wizStepAnims() {
+  const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId) || WIZ_DESIGNS[0];
+  const anims = animsForDesign(d);
+  return `<div class="wiz-panel">
+    <h2>Motion for “${d.name}” <span style="color:#8b9bb0;font-weight:500">(25)</span></h2>
+    <p>Animations are ordered to fit this design. Pick one — that locks your preset.</p>
+  </div>
+  <div class="wiz-card-grid" id="wizAnimGrid">
+    ${anims.map((a, i) => `
+      <button type="button" class="wiz-option ${wiz.animId===a.id?"selected":""}" data-anim="${a.id}">
+        <div class="wiz-thumb" style="display:grid;place-items:center;color:#8b9bb0;font-size:12px">
+          <div>
+            <div style="font-size:22px;margin-bottom:6px">${({slideUp:"↑",slideLeft:"←",slideRight:"→",scaleFade:"◍",maskWipe:"▣",riseBlur:" cons",logoLead:"◉",dropSoft:"↓",none:"▣"}[a.style]||"✦")}</div>
+            <div>${a.style}</div>
+          </div>
+        </div>
+        <div class="meta"><div class="t">${i+1}. ${a.name}</div><div class="s">in ${a.inDur}s · hold ${a.hold}s · out ${a.outDur}s</div></div>
+      </button>`).join("")}
+  </div>`;
+}
+
+function wizStepDone() {
+  const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId);
+  const a = WIZ_ANIMS.find((x) => x.id === wiz.animId);
+  return `<div class="wiz-panel">
+    <h2>Preset ready</h2>
+    <p><b>${wiz.presetName || "Untitled"}</b> is saved in your preset list and applied to the editor.</p>
+    <ul style="color:#c5d4ea;font-size:13px;line-height:1.6">
+      <li>Design: ${d ? d.name : "—"}</li>
+      <li>Motion: ${a ? a.name : "—"}</li>
+      <li>People: ${(wiz.peopleDraft || people || []).length}</li>
+    </ul>
+    <p style="margin-top:12px">Click <b>Open editor</b> to download animations or fine-tune in Advanced.</p>
+  </div>`;
+}
+
+function wireWizardStepDom() {
+  // source tabs
+  document.querySelectorAll("#wizard [data-src]").forEach((b) => {
+    b.onclick = () => {
+      wiz.sourceType = b.getAttribute("data-src");
+      const fields = document.getElementById("wizSourceFields");
+      if (fields) fields.innerHTML = wizSourceFieldsHtml();
+      document.querySelectorAll("#wizard [data-src]").forEach((x) => x.classList.toggle("on", x === b));
+      wireWizardStepDom(); // rebind fields only — careful infinite? fields don't have data-src
+    };
+  });
+  const fields = document.getElementById("wizSourceFields");
+  if (fields && wiz.step === 0 && !fields.dataset.ready) {
+    fields.innerHTML = wizSourceFieldsHtml();
+    fields.dataset.ready = "1";
+  } else if (fields && wiz.step === 0 && fields.innerHTML.trim() === "") {
+    fields.innerHTML = wizSourceFieldsHtml();
+  }
+
+  // colors
+  document.querySelectorAll("#wizPalettes .wiz-swatch").forEach((b) => {
+    b.onclick = () => {
+      const k = b.getAttribute("data-pal");
+      const pal = FEEL_COLORS[k];
+      if (!pal) return;
+      wiz.colorSource = k;
+      wiz.colors = { ...wiz.colors, ...pal, alpha: pal.alpha != null ? pal.alpha : wiz.colors.alpha };
+      renderWizard();
+    };
+  });
+  ["wizCTop","wizCBot","wizCAccent","wizCName","wizCTitle"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.oninput = () => {
+      wiz.colors.panelTop = document.getElementById("wizCTop")?.value || wiz.colors.panelTop;
+      wiz.colors.panelBot = document.getElementById("wizCBot")?.value || wiz.colors.panelBot;
+      wiz.colors.accent = document.getElementById("wizCAccent")?.value || wiz.colors.accent;
+      wiz.colors.name = document.getElementById("wizCName")?.value || wiz.colors.name;
+      wiz.colors.title = document.getElementById("wizCTitle")?.value || wiz.colors.title;
+      wiz.colorSource = "custom";
+    };
+  });
+
+  // fonts
+  document.querySelectorAll("#wizFontPacks [data-fp]").forEach((b) => {
+    b.onclick = () => {
+      const k = b.getAttribute("data-fp");
+      const pack = FEEL_FONTS[k] || FEEL_FONTS.default;
+      wiz.fonts = { ...pack, pack: k };
+      renderWizard();
+    };
+  });
+
+  // designs
+  document.querySelectorAll("#wizDesignGrid [data-design]").forEach((b) => {
+    b.onclick = () => {
+      wiz.designId = b.getAttribute("data-design");
+      document.querySelectorAll("#wizDesignGrid .wiz-option").forEach((x) => x.classList.toggle("selected", x === b));
+    };
+  });
+
+  // anims
+  document.querySelectorAll("#wizAnimGrid [data-anim]").forEach((b) => {
+    b.onclick = () => {
+      wiz.animId = b.getAttribute("data-anim");
+      document.querySelectorAll("#wizAnimGrid .wiz-option").forEach((x) => x.classList.toggle("selected", x === b));
+    };
+  });
+}
+
+function readWizSourceFields() {
+  if (wiz.sourceType === "manual") {
+    wiz.manualText = document.getElementById("wizManual")?.value || wiz.manualText;
+  } else {
+    const u = document.getElementById("wizUrl")?.value?.trim();
+    if (u) wiz.sourceUrl = u;
+  }
+  // fonts fields if present
+  const fn = document.getElementById("wizFontName");
+  const ft = document.getElementById("wizFontTitle");
+  if (fn) wiz.fonts.name = fn.value;
+  if (ft) wiz.fonts.title = ft.value;
+  const nt = document.getElementById("wizNameTrack");
+  const tt = document.getElementById("wizTitleTrack");
+  if (nt) wiz.fonts.nameTrack = parseFloat(nt.value);
+  if (tt) wiz.fonts.titleTrack = parseFloat(tt.value);
+}
+
+async function wizLoadPeople() {
+  readWizSourceFields();
+  if (wiz.sourceType === "manual") {
+    const rows = (typeof parseCsv === "function")
+      ? parseCsv(wiz.manualText || "")
+      : [];
+    if (!rows.length) throw new Error("Paste at least one Name, Title line");
+    wiz.peopleDraft = normalizePeople(rows).map(applyNameExceptions);
+    return;
+  }
+  // website or gdoc
+  let url = wiz.sourceUrl;
+  if (wiz.sourceType === "gdoc") {
+    // try export=txt
+    const m = url.match(/\/document\/d\/([^/]+)/);
+    if (m) url = `https://docs.google.com/document/d/${m[1]}/export?format=txt`;
+  }
+  if (typeof fetchHtmlViaProxy !== "function") throw new Error("Live fetch unavailable");
+  setWizStatus("Fetching source…");
+  const htmlText = await fetchHtmlViaProxy(url);
+  let parsed = [];
+  if (wiz.sourceType === "gdoc" || /docs\.google/.test(wiz.sourceUrl)) {
+    // plain text lines
+    const lines = htmlText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (line.includes(",")) {
+        const [name, ...rest] = line.split(",");
+        parsed.push({
+          id: slugPersonId(name), name: name.trim(), legalName: name.trim(), displayName: "",
+          title: rest.join(",").trim(), baseTitle: rest.join(",").trim(), group: "",
+          source: wiz.sourceUrl, viceMayor: false, viceMayorForm: "short", viceMayorCustom: "",
+        });
+      }
+    }
+  } else {
+    parsed = parsePeopleFromHtml(htmlText, url);
+  }
+  if (!parsed.length) {
+    // fall back to current people
+    wiz.peopleDraft = normalizePeople(structuredClone(people));
+    setWizStatus("No people parsed — using current roster");
+    return;
+  }
+  wiz.peopleDraft = mergeLivePeople(people || [], parsed, wiz.sourceUrl);
+  wiz.peopleDraft.forEach(applyNameExceptions);
+  setWizStatus(`Loaded ${wiz.peopleDraft.length} people`);
+}
+
+async function wizExtractColorsFromSource() {
+  try {
+    if (wiz.sourceType === "manual") return;
+    const url = wiz.sourceUrl;
+    if (!url || typeof fetchHtmlViaProxy !== "function") return;
+    setWizStatus("Sampling colors…");
+    const htmlText = await fetchHtmlViaProxy(url);
+    const colors = [];
+    const re = /#([0-9a-fA-F]{6})\b/g;
+    let m;
+    while ((m = re.exec(htmlText)) && colors.length < 40) {
+      colors.push("#" + m[1].toLowerCase());
+    }
+    // theme-color
+    const tm = htmlText.match(/name=["']theme-color["'][^>]*content=["']([^"']+)["']/i)
+      || htmlText.match(/content=["']([^"']+)["'][^>]*name=["']theme-color["']/i);
+    if (tm && /^#/.test(tm[1])) colors.unshift(tm[1]);
+    // pick dark-ish for panel, bright for accent
+    const uniq = [...new Set(colors)];
+    const lum = (hex) => {
+      const n = parseInt(hex.slice(1), 16);
+      const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const darks = uniq.filter((c) => lum(c) < 90).sort((a, b) => lum(a) - lum(b));
+    const brights = uniq.filter((c) => lum(c) > 100).sort((a, b) => lum(b) - lum(a));
+    if (darks[0]) wiz.colors.panelBot = darks[0];
+    if (darks[1]) wiz.colors.panelTop = darks[1];
+    else if (darks[0]) wiz.colors.panelTop = darks[0];
+    if (brights[0]) wiz.colors.accent = brights[0];
+    wiz.colorSource = "auto";
+  } catch (_) {
+    /* keep defaults */
+  }
+}
+
+function applyWizardThemeToEditor(theme) {
+  applyTheme({
+    ...themeFromUI(),
+    ...theme,
+  });
+  // sync tracking sliders if present
+  if ($("nameTracking") && theme.nameTracking) $("nameTracking").value = parseFloat(theme.nameTracking);
+  if ($("titleTracking") && theme.titleTracking) $("titleTracking").value = parseFloat(theme.titleTracking);
+  if ($("nameTrackVal") && $("nameTracking")) $("nameTrackVal").textContent = formatTrack($("nameTracking").value);
+  if ($("titleTrackVal") && $("titleTracking")) $("titleTrackVal").textContent = formatTrack($("titleTracking").value);
+}
+
+function applyWizardAnimToEditor(anim) {
+  if ($("animStyle")) $("animStyle").value = anim.style;
+  if ($("animInDur")) $("animInDur").value = anim.inDur;
+  if ($("animOutDur")) $("animOutDur").value = anim.outDur;
+  if ($("animHoldDur")) $("animHoldDur").value = anim.hold;
+  if ($("animFps")) $("animFps").value = 24;
+  if ($("mbSamples")) $("mbSamples").value = "16";
+  if ($("animDeliver")) $("animDeliver").value = "pngseq";
+  if ($("logoPlayMode")) $("logoPlayMode").value = "once";
+  if (typeof applyLogoPlayMode === "function") applyLogoPlayMode();
+}
+
+function saveWizardPreset() {
+  const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId);
+  const a = WIZ_ANIMS.find((x) => x.id === wiz.animId);
+  if (!d || !a) throw new Error("Pick a design and a motion");
+  const theme = designToThemeBits(d, wiz.colors, wiz.fonts);
+  applyWizardThemeToEditor(theme);
+  applyWizardAnimToEditor(a);
+
+  if (wiz.peopleDraft?.length) {
+    people = normalizePeople(wiz.peopleDraft);
+    people.forEach(applyNameExceptions);
+    selectedId = people[0]?.id || null;
+  }
+
+  const name = wiz.presetName || `${d.name} · ${a.name}`;
+  wiz.presetName = name;
+  if ($("presetName")) $("presetName").value = name;
+  if ($("sourceUrl") && wiz.sourceUrl) $("sourceUrl").value = wiz.sourceUrl;
+
+  // build payload and save
+  const list = typeof loadPresets === "function" ? loadPresets() : [];
+  const payload = (typeof currentPresetPayload === "function")
+    ? currentPresetPayload(name, { forDownload: false })
+    : { name, theme, people, id: uid(), updated: Date.now() };
+  payload.name = name;
+  payload.wizard = { designId: d.id, animId: a.id, sourceType: wiz.sourceType, sourceUrl: wiz.sourceUrl };
+  // ensure theme in payload
+  payload.theme = { ...payload.theme, ...theme };
+  payload.logoPlayMode = "once";
+  const idx = list.findIndex((x) => x.name === name);
+  if (idx >= 0) { payload.id = list[idx].id; list[idx] = payload; }
+  else list.unshift(payload);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {
+    // prune and retry
+    while (list.length > 1) {
+      list.pop();
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); break; } catch (_) {}
+    }
+  }
+  if (typeof renderPresets === "function") renderPresets();
+  if (typeof renderList === "function") renderList();
+  if (typeof renderPerson === "function") renderPerson();
+  if (typeof playIn === "function") playIn();
+  if (typeof persistState === "function") persistState();
+  if ($("statusPill")) $("statusPill").textContent = "Preset saved: " + name;
+}
+
+async function wizNext() {
+  readWizSourceFields();
+  try {
+    if (wiz.step === 0) {
+      await wizLoadPeople();
+      await wizExtractColorsFromSource();
+      wiz.step = 1;
+    } else if (wiz.step === 1) {
+      // colors already in wiz.colors via inputs
+      const top = document.getElementById("wizCTop");
+      if (top) {
+        wiz.colors.panelTop = document.getElementById("wizCTop").value;
+        wiz.colors.panelBot = document.getElementById("wizCBot").value;
+        wiz.colors.accent = document.getElementById("wizCAccent").value;
+        wiz.colors.name = document.getElementById("wizCName").value;
+        wiz.colors.title = document.getElementById("wizCTitle").value;
+      }
+      wiz.step = 2;
+    } else if (wiz.step === 2) {
+      readWizSourceFields();
+      wiz.step = 3;
+    } else if (wiz.step === 3) {
+      if (!wiz.designId) { setWizStatus("Pick a design to continue"); return; }
+      wiz.step = 4;
+    } else if (wiz.step === 4) {
+      if (!wiz.animId) { setWizStatus("Pick a motion to continue"); return; }
+      const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId);
+      const a = WIZ_ANIMS.find((x) => x.id === wiz.animId);
+      wiz.presetName = `${d.name} · ${a.name}`;
+      setWizStatus("Saving preset…");
+      saveWizardPreset();
+      wiz.step = 5;
+    } else {
+      closeWizard();
+      if (typeof setAppMode === "function") setAppMode("simple");
+    }
+    renderWizard();
+  } catch (e) {
+    setWizStatus(e.message || String(e));
+    console.error(e);
+  }
+}
+
+function wizBack() {
+  readWizSourceFields();
+  if (wiz.step > 0) {
+    wiz.step -= 1;
+    renderWizard();
+  }
+}
+
+function wireWizardChrome() {
+  document.getElementById("btnNewDesign")?.addEventListener("click", openWizard);
+  document.getElementById("btnNewDesignSimple")?.addEventListener("click", openWizard);
+  document.getElementById("wizCancel")?.addEventListener("click", closeWizard);
+  document.getElementById("wizNext")?.addEventListener("click", () => wizNext());
+  document.getElementById("wizBack")?.addEventListener("click", () => wizBack());
+}
+wireWizardChrome();
+
 // initial play
 playIn();
 window.addEventListener("resize", fitText);
