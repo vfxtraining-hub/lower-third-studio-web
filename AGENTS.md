@@ -39,6 +39,20 @@ CLI fallback: `scripts/build_fusion_l3_switcher.py`, `scripts/id_person_under_pl
 2. Read `ai/machine-api.json` if automating the browser.
 3. Prefer **not** re-architecting the 4MB HTML unless fixing a bug; inject small APIs / docs instead.
 
+## Always push / sync Pages after every change
+
+**Standing rule (Yan):** after any meaningful edit to the studio, **always** sync and push GitHub Pages — do not wait to be asked.
+
+```bash
+# from package root
+./scripts/sync_pages.sh "short commit message"
+```
+
+What it does: copies `Lower_Third_Studio.html` → `web/index.html` (plus `llms.txt`, `AGENTS.md`, `START_HERE.md`, `ai/`), commits, `git push origin main`.
+
+Live: https://vfxtraining-hub.github.io/lower-third-studio-web/  
+Password: `L3Dstudio`
+
 ## Operator loop (happy path)
 
 ```
