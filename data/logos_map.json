@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "default_logo": {
+    "id": "aventura_30y",
+    "label": "City of Aventura 30-Year",
+    "still": "logo_hold.png",
+    "sequence_dir": "logo_frames",
+    "animated_webp": "logo_anim.webp",
+    "notes": "Built into Lower_Third_Studio.html as EMBEDDED_LOGO / EMBEDDED_HOLD"
+  },
+  "org_logos": {
+    "City of Aventura": "aventura_30y",
+    "City Commission": "aventura_30y",
+    "Aventura Police Department": "aventura_30y",
+    "APD": "aventura_30y"
+  },
+  "person_logos": {},
+  "search_paths": [
+    "logo_hold.png",
+    "logo_frames",
+    "logo_anim.webp",
+    "~/Desktop/Aventura_L3_Studio/logo_hold.png",
+    "/Applications/Sort/30 year Logo"
+  ]
+}

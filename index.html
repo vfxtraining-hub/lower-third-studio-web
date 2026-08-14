@@ -4,9 +4,25 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Lower Third Studio — Aventura</title>
+<meta name="description" content="Broadcast lower-third designer. Animated PNG sequences with alpha for DaVinci Resolve. AI-operable via window.L3Studio and ai/OPERATOR_PROMPT.md." />
+<meta name="ai-operator" content="ai/OPERATOR_PROMPT.md" />
+<meta name="ai-api" content="window.L3Studio" />
+<meta name="ai-api-schema" content="ai/machine-api.json" />
+<meta name="ai-version" content="1.0.0" />
+<link rel="alternate" type="text/plain" title="llms.txt" href="llms.txt" />
+<link rel="alternate" type="text/markdown" title="AGENTS" href="AGENTS.md" />
+<link rel="alternate" type="application/json" title="L3Studio Machine API" href="ai/machine-api.json" />
+<!-- AE package fonts: Bebas Neue (name) + Montserrat Bold (title) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+<!--
+  AI OPERATORS: Read ai/OPERATOR_PROMPT.md (or call window.L3Studio.describeForAI() after load).
+  Default mission: wizard/preset → renderAll PNG sequences → scripts/import_l3_to_resolve.py
+-->
 <style>
   :root {
-    /* ── Theme tokens (all changeable + saved in presets) ── */
+    /* ── L3 theme tokens (saved in presets) ── */
     --panel-top: #12305c;
     --panel-bot: #0b1f3d;
     --panel-alpha: 0.94;
@@ -17,12 +33,26 @@
     --stage-bg: #1a1a1a;
     --checker-a: #222;
     --checker-b: #2c2c2c;
-    --ui-bg: #0e1116;
-    --ui-panel: #161b22;
-    --ui-line: #2a3340;
-    --ui-text: #e8eef6;
-    --ui-muted: #8b9bb0;
-    --ui-accent: #3d8bfd;
+    /* ── App chrome — Apple-like design surface ── */
+    --ui-bg: #000000;
+    --ui-panel: rgba(28, 28, 30, 0.72);
+    --ui-panel-solid: #1c1c1e;
+    --ui-elevated: #2c2c2e;
+    --ui-line: rgba(255, 255, 255, 0.08);
+    --ui-line-strong: rgba(255, 255, 255, 0.14);
+    --ui-text: #f5f5f7;
+    --ui-muted: #98989d;
+    --ui-accent: #0a84ff;
+    --ui-accent-soft: rgba(10, 132, 255, 0.18);
+    --ui-success: #30d158;
+    --ui-danger: #ff453a;
+    --ui-radius: 12px;
+    --ui-radius-sm: 8px;
+    --ui-radius-lg: 18px;
+    --ui-blur: saturate(180%) blur(20px);
+    --ui-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    --ui-shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
+    --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
     --font-name: "Avenir Next", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
     --font-title: "Avenir Next", "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
     --name-size: 40px;
@@ -44,93 +74,129 @@
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
-    font-family: system-ui, -apple-system, sans-serif;
-    background: var(--ui-bg);
+    font-family: var(--font-ui);
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(10,132,255,0.12), transparent 55%),
+      radial-gradient(900px 500px at 100% 0%, rgba(191,90,242,0.08), transparent 50%),
+      #000;
     color: var(--ui-text);
     display: grid;
     grid-template-columns: 340px 1fr 300px;
-    grid-template-rows: 48px 1fr;
+    grid-template-rows: 56px 1fr;
     height: 100vh;
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
   }
   header {
     grid-column: 1 / -1;
-    display: flex; align-items: center; gap: 16px;
-    padding: 0 16px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 18px;
     border-bottom: 1px solid var(--ui-line);
-    background: var(--ui-panel);
+    background: rgba(22, 22, 24, 0.72);
+    backdrop-filter: var(--ui-blur);
+    -webkit-backdrop-filter: var(--ui-blur);
+    z-index: 20;
   }
-  header h1 { font-size: 14px; font-weight: 600; margin: 0; letter-spacing: .02em; }
-  header .tag { color: var(--ui-muted); font-size: 12px; }
+  header h1 {
+    font-size: 15px; font-weight: 600; margin: 0;
+    letter-spacing: -0.02em;
+  }
+  header .tag { color: var(--ui-muted); font-size: 12px; font-weight: 500; }
   header .spacer { flex: 1; }
   header button, .btn {
     background: var(--ui-accent); color: #fff; border: 0;
-    border-radius: 6px; padding: 7px 12px; font-size: 12px; font-weight: 600;
+    border-radius: 980px; padding: 8px 14px; font-size: 12px; font-weight: 600;
     cursor: pointer;
+    font-family: inherit;
+    transition: transform .12s ease, filter .12s ease, background .15s ease;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset;
   }
   header button.ghost, .btn.ghost {
-    background: transparent; color: var(--ui-text);
-    border: 1px solid var(--ui-line);
+    background: rgba(255,255,255,0.06); color: var(--ui-text);
+    border: 1px solid var(--ui-line-strong);
+    box-shadow: none;
   }
   header button:hover, .btn:hover { filter: brightness(1.08); }
+  header button:active, .btn:active { transform: scale(0.97); }
   aside, .right {
-    background: var(--ui-panel);
+    background: rgba(28, 28, 30, 0.55);
+    backdrop-filter: var(--ui-blur);
+    -webkit-backdrop-filter: var(--ui-blur);
     border-right: 1px solid var(--ui-line);
     overflow: auto;
-    padding: 12px;
+    padding: 16px 14px;
   }
   .right { border-right: 0; border-left: 1px solid var(--ui-line); }
-  .sec { margin-bottom: 16px; }
+  .sec { margin-bottom: 18px; }
   .sec h2 {
-    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
-    color: var(--ui-muted); margin: 0 0 8px; font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--ui-muted); margin: 0 0 10px; font-weight: 600;
   }
   label.field {
-    display: grid; gap: 4px; margin-bottom: 8px; font-size: 11px; color: var(--ui-muted);
+    display: grid; gap: 5px; margin-bottom: 10px; font-size: 11px; color: var(--ui-muted); font-weight: 500;
   }
   label.field input[type="text"],
   label.field input[type="number"],
   label.field input[type="url"],
   label.field select,
   label.field textarea {
-    background: var(--ui-bg); color: var(--ui-text);
-    border: 1px solid var(--ui-line); border-radius: 6px;
-    padding: 7px 9px; font-size: 13px; width: 100%;
+    background: rgba(255,255,255,0.06); color: var(--ui-text);
+    border: 1px solid var(--ui-line-strong); border-radius: var(--ui-radius-sm);
+    padding: 9px 11px; font-size: 13px; width: 100%;
+    font-family: inherit;
+    transition: border-color .15s, background .15s, box-shadow .15s;
   }
-  label.field textarea { min-height: 72px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+  label.field input:focus, label.field select:focus, label.field textarea:focus {
+    outline: none;
+    border-color: rgba(10,132,255,0.65);
+    box-shadow: 0 0 0 3px var(--ui-accent-soft);
+    background: rgba(255,255,255,0.08);
+  }
+  label.field textarea { min-height: 72px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; }
   label.field input[type="color"] {
-    width: 100%; height: 32px; border: 1px solid var(--ui-line);
-    border-radius: 6px; background: var(--ui-bg); padding: 2px;
+    width: 100%; height: 36px; border: 1px solid var(--ui-line-strong);
+    border-radius: var(--ui-radius-sm); background: rgba(255,255,255,0.06); padding: 3px;
   }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .people { display: flex; flex-direction: column; gap: 4px; max-height: 42vh; overflow: auto; }
+  .people { display: flex; flex-direction: column; gap: 6px; max-height: 42vh; overflow: auto; padding-right: 2px; }
   .person {
     text-align: left; width: 100%;
-    background: var(--ui-bg); border: 1px solid var(--ui-line);
-    border-radius: 6px; padding: 8px 10px; color: var(--ui-text);
-    cursor: pointer; font-size: 12px;
+    background: rgba(255,255,255,0.04); border: 1px solid transparent;
+    border-radius: 12px; padding: 10px 12px; color: var(--ui-text);
+    cursor: pointer; font-size: 13px;
+    transition: background .15s, border-color .15s, transform .12s;
+    font-family: inherit;
   }
-  .person:hover { border-color: var(--ui-accent); }
-  .person.active { border-color: var(--ui-accent); background: #1a2740; }
-  .person .n { font-weight: 600; }
-  .person .t { color: var(--ui-muted); font-size: 11px; margin-top: 2px; }
-  .person .g { color: var(--accent); font-size: 10px; margin-top: 2px; }
+  .person:hover { background: rgba(255,255,255,0.07); border-color: var(--ui-line-strong); }
+  .person.active {
+    border-color: rgba(10,132,255,0.55);
+    background: var(--ui-accent-soft);
+    box-shadow: 0 0 0 1px rgba(10,132,255,0.25);
+  }
+  .person .n { font-weight: 600; letter-spacing: -0.01em; }
+  .person .t { color: var(--ui-muted); font-size: 11px; margin-top: 3px; }
+  .person .g { color: var(--accent); font-size: 10px; margin-top: 3px; font-weight: 600; }
   main.stage-wrap {
     display: flex; flex-direction: column; min-width: 0; min-height: 0;
-    background: #0a0c10;
+    background: transparent;
   }
   .toolbar {
     display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-    padding: 8px 12px; border-bottom: 1px solid var(--ui-line);
+    padding: 10px 14px; border-bottom: 1px solid var(--ui-line);
+    background: rgba(22,22,24,0.4);
   }
   .toolbar .pill {
     font-size: 11px; color: var(--ui-muted);
-    border: 1px solid var(--ui-line); border-radius: 999px; padding: 3px 10px;
+    border: 1px solid var(--ui-line); border-radius: 999px; padding: 4px 11px;
+    background: rgba(255,255,255,0.04);
   }
   .viewport {
-    flex: 1; display: grid; place-items: center; padding: 16px; min-height: 0;
+    flex: 1; display: grid; place-items: center; padding: 28px 20px; min-height: 0;
   }
   .stage {
+    --l3-pkg-scale: 1;
     position: relative;
     width: min(100%, 1100px);
     aspect-ratio: 16 / 9;
@@ -142,11 +208,18 @@
     background-size: 24px 24px;
     background-position: 0 0, 0 12px, 12px -12px, -12px 0;
     background-color: var(--checker-b);
-    border-radius: 8px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.06),
+      0 24px 80px rgba(0,0,0,0.55),
+      0 2px 0 rgba(255,255,255,0.04) inset;
   }
-  .stage.portrait { aspect-ratio: 9 / 16; width: min(100%, 380px); max-height: min(78vh, 720px); }
+  .stage.portrait {
+    aspect-ratio: 9 / 16;
+    width: min(100%, 420px);
+    max-height: min(78vh, 760px);
+  }
   .stage.solid { background: var(--stage-bg); background-image: none; }
   .plate {
     position: absolute;
@@ -235,7 +308,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  .hint { font-size: 11px; color: var(--ui-muted); line-height: 1.4; }
+  .hint { font-size: 11px; color: var(--ui-muted); line-height: 1.45; letter-spacing: -0.01em; }
   .preset-list { display: flex; flex-direction: column; gap: 4px; }
   .preset-item {
     display: flex; gap: 6px; align-items: center;
@@ -313,6 +386,63 @@
     display: none !important;
   }
 
+
+  /* Simple-mode preset switcher (always visible in Simple) */
+  .simple-preset-bar {
+    display: none;
+    margin: 0 0 10px;
+    padding: 10px;
+    border: 1px solid var(--ui-line);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+  }
+  body.mode-simple .simple-preset-bar { display: block; }
+  body.mode-advanced .simple-preset-bar { display: block; } /* keep in advanced left too */
+  .simple-preset-bar h2 {
+    margin: 0 0 8px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ui-muted);
+    font-weight: 650;
+  }
+  .simple-preset-bar select {
+    width: 100%;
+    margin-bottom: 8px;
+    background: var(--ui-bg, #0e1116);
+    color: var(--ui-text);
+    border: 1px solid var(--ui-line);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .simple-preset-bar .stack-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  .simple-preset-bar .stack-btns .btn,
+  .simple-preset-bar .stack-btns label.btn {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 11px;
+    padding: 7px 8px;
+  }
+  .simple-bar .preset-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 220px;
+  }
+  .simple-bar .preset-inline select {
+    max-width: 180px;
+    background: var(--ui-bg, #0e1116);
+    color: var(--ui-text);
+    border: 1px solid var(--ui-line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
   /* ===== ADVANCED MODE ===== */
   body.mode-advanced {
     grid-template-columns: 300px 1fr 300px;
@@ -383,28 +513,91 @@
   .simple-vm input { width: 16px; height: 16px; }
   .mode-toggle {
     display: inline-flex;
-    border: 1px solid var(--ui-line);
-    border-radius: 8px;
+    border: 1px solid var(--ui-line-strong);
+    border-radius: 980px;
     overflow: hidden;
+    background: rgba(255,255,255,0.06);
+    padding: 2px;
+    gap: 2px;
   }
   .mode-toggle button {
     background: transparent;
     color: var(--ui-muted);
     border: 0;
-    padding: 7px 12px;
+    padding: 6px 14px;
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    border-radius: 980px;
+    font-family: inherit;
+    transition: background .15s, color .15s;
   }
   .mode-toggle button.on {
-    background: var(--ui-accent);
+    background: rgba(255,255,255,0.14);
     color: #fff;
+    box-shadow: var(--ui-shadow-sm);
   }
   .simple-hero-hint {
     font-size: 12px;
     color: var(--ui-muted);
-    margin: 0 0 10px;
-    line-height: 1.35;
+    margin: 0 0 14px;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+  }
+  #statusPill.pill, header .pill, .simple-bar .pill {
+    font-size: 11px;
+    color: var(--ui-muted);
+    border: 1px solid var(--ui-line);
+    border-radius: 999px;
+    padding: 5px 11px;
+    background: rgba(255,255,255,0.04);
+    font-weight: 500;
+  }
+  .simple-search {
+    width: 100%;
+    margin-bottom: 12px;
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid var(--ui-line-strong) !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    color: var(--ui-text) !important;
+    font-size: 13px !important;
+    font-family: inherit !important;
+  }
+  .simple-search:focus {
+    outline: none;
+    border-color: rgba(10,132,255,0.65) !important;
+    box-shadow: 0 0 0 3px var(--ui-accent-soft);
+  }
+  .simple-vm {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid var(--ui-line) !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+  }
+  .simple-preset-bar {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid var(--ui-line) !important;
+    border-radius: 14px !important;
+    padding: 12px !important;
+  }
+  .simple-bar {
+    background: rgba(22,22,24,0.55) !important;
+    backdrop-filter: var(--ui-blur);
+    -webkit-backdrop-filter: var(--ui-blur);
+    border-bottom: 1px solid var(--ui-line) !important;
+  }
+  .simple-bar .btn-primary {
+    border-radius: 980px !important;
+    padding: 10px 18px !important;
+    font-weight: 650 !important;
+    background: var(--ui-accent) !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 4px 16px rgba(10,132,255,0.25);
+  }
+  .simple-bar .btn-sec {
+    border-radius: 980px !important;
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid var(--ui-line-strong) !important;
   }
   details.adv-fold {
     border: 1px solid var(--ui-line);
@@ -434,114 +627,151 @@
   }
 
 
+  /*
+   * 9:16 — uniform package scale for ALL templates (no per-element clamps, no … ellipsis).
+   * Transform-origin bottom-left keeps the L3 planted in the safe corner.
+   */
+  .stage.portrait {
+    --l3-pkg-scale: 0.70;
+  }
   .stage.portrait .l3 {
-    left: 5% !important;
-    right: 5% !important;
+    left: 5.5% !important;
+    right: auto !important;
     bottom: 5.5% !important;
-    max-width: 90% !important;
-    width: auto;
-    gap: 10px;
+    max-width: none !important;
+    width: max-content !important;
+    gap: var(--gap-logo);
+    transform: scale(var(--l3-pkg-scale, 0.70)) !important;
+    transform-origin: left bottom !important;
+  }
+  .stage.portrait .l3.show,
+  .stage.portrait .l3.hide {
+    /* package scale wins over l3In translate — hold stays scaled */
+    animation: none !important;
+    opacity: 1 !important;
   }
   .stage.portrait .logo-box {
-    width: clamp(48px, 14cqi, 72px) !important;
-    height: clamp(48px, 14cqi, 72px) !important;
-    flex: 0 0 clamp(48px, 14cqi, 72px) !important;
+    /* keep theme logo size; whole .l3 is scaled */
+    width: var(--logo-size) !important;
+    height: var(--logo-size) !important;
+    flex: 0 0 var(--logo-size) !important;
   }
-  .stage.portrait { container-type: inline-size; }
   .stage.portrait .card {
     min-width: 0 !important;
-    max-width: 100%;
-    flex: 1 1 auto;
-    padding: 12px 14px !important;
-    overflow: hidden;
+    max-width: none !important;
+    flex: 0 0 auto;
+    overflow: visible !important;
   }
-  .stage.portrait .name {
-    font-size: clamp(14px, 7.2cqi, 26px) !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
+  .stage.portrait .name,
   .stage.portrait .title {
-    font-size: clamp(10px, 4.6cqi, 15px) !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    letter-spacing: 0.06em !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: none !important;
   }
   .stage:not(.portrait) .l3 {
     max-width: min(920px, calc(100% - var(--l3-left) - 40px));
   }
-  .stage:not(.portrait) .card { min-width: 0; max-width: 100%; overflow: hidden; }
+  .stage:not(.portrait) .card { min-width: 0; max-width: none; overflow: visible; }
   .stage:not(.portrait) .name,
-  .stage:not(.portrait) .title { overflow: hidden; text-overflow: ellipsis; }
+  .stage:not(.portrait) .title {
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
+  }
 
 
-  /* ===== DESIGN WIZARD ===== */
+  /* ===== DESIGN WIZARD — high-end Apple-like flow ===== */
   #wizard {
     display: none;
     position: fixed; inset: 0; z-index: 9999;
-    background: #0a0d12;
+    background:
+      radial-gradient(1000px 500px at 30% -5%, rgba(10,132,255,0.16), transparent 55%),
+      radial-gradient(800px 400px at 90% 10%, rgba(191,90,242,0.1), transparent 50%),
+      #000;
     color: var(--ui-text);
     flex-direction: column;
     overflow: hidden;
+    font-family: var(--font-ui);
   }
   #wizard.open { display: flex; }
   .wiz-top {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 16px; border-bottom: 1px solid #2a3340;
-    background: #12171f;
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--ui-line);
+    background: rgba(22,22,24,0.65);
+    backdrop-filter: var(--ui-blur);
+    -webkit-backdrop-filter: var(--ui-blur);
   }
-  .wiz-top h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  .wiz-top h1 {
+    font-size: 15px; margin: 0; font-weight: 600;
+    letter-spacing: -0.02em; white-space: nowrap;
+  }
   .wiz-steps {
-    display: flex; gap: 6px; flex: 1; flex-wrap: wrap; justify-content: center;
+    display: flex; gap: 4px; flex: 1; flex-wrap: wrap; justify-content: center;
   }
   .wiz-step-dot {
-    font-size: 11px; padding: 5px 10px; border-radius: 999px;
-    border: 1px solid #2a3340; color: #8b9bb0; background: transparent;
+    font-size: 11px; padding: 6px 11px; border-radius: 999px;
+    border: 1px solid transparent; color: var(--ui-muted);
+    background: transparent; font-weight: 500; letter-spacing: -0.01em;
   }
-  .wiz-step-dot.on { background: #3d8bfd; color: #fff; border-color: #3d8bfd; }
-  .wiz-step-dot.done { border-color: #3d8bfd66; color: #c5d4ea; }
+  .wiz-step-dot.on {
+    background: rgba(255,255,255,0.12); color: #fff;
+    border-color: var(--ui-line-strong);
+    box-shadow: var(--ui-shadow-sm);
+  }
+  .wiz-step-dot.done { color: #a1c9ff; }
   .wiz-body {
-    flex: 1; overflow: auto; padding: 20px 18px 100px;
-    max-width: 1200px; width: 100%; margin: 0 auto;
+    flex: 1; overflow: auto; padding: 28px 22px 120px;
+    max-width: 1080px; width: 100%; margin: 0 auto;
   }
   .wiz-foot {
     position: sticky; bottom: 0;
-    display: flex; gap: 10px; align-items: center;
-    padding: 12px 16px; border-top: 1px solid #2a3340;
-    background: #12171fcc; backdrop-filter: blur(10px);
+    display: flex; gap: 12px; align-items: center;
+    padding: 14px 22px;
+    border-top: 1px solid var(--ui-line);
+    background: rgba(22,22,24,0.72);
+    backdrop-filter: var(--ui-blur);
+    -webkit-backdrop-filter: var(--ui-blur);
   }
   .wiz-foot .spacer { flex: 1; }
   .wiz-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
   }
   .wiz-option {
-    border: 2px solid #2a3340;
-    border-radius: 12px;
-    background: #161b22;
+    border: 1px solid var(--ui-line-strong);
+    border-radius: 16px;
+    background: rgba(28,28,30,0.75);
     cursor: pointer;
     overflow: hidden;
     text-align: left;
     padding: 0;
     color: inherit;
-    transition: border-color .15s, transform .15s;
+    font-family: inherit;
+    transition: border-color .18s, transform .18s, box-shadow .18s, background .18s;
   }
-  .wiz-option:hover { border-color: #3d8bfd88; transform: translateY(-1px); }
-  .wiz-option.selected { border-color: #3d8bfd; box-shadow: 0 0 0 1px #3d8bfd; }
+  .wiz-option:hover {
+    border-color: rgba(10,132,255,0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  }
+  .wiz-option.selected {
+    border-color: rgba(10,132,255,0.85);
+    box-shadow: 0 0 0 3px var(--ui-accent-soft), 0 12px 28px rgba(0,0,0,0.35);
+    background: rgba(10,132,255,0.08);
+  }
   .wiz-thumb {
-    height: 110px; position: relative;
+    height: 118px; position: relative;
     background:
-      linear-gradient(45deg, #222 25%, transparent 25%),
-      linear-gradient(-45deg, #222 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #222 75%),
-      linear-gradient(-45deg, transparent 75%, #222 75%);
+      linear-gradient(45deg, #1a1a1c 25%, transparent 25%),
+      linear-gradient(-45deg, #1a1a1c 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #1a1a1c 75%),
+      linear-gradient(-45deg, transparent 75%, #1a1a1c 75%);
     background-size: 16px 16px;
     background-position: 0 0, 0 8px, 8px -8px, -8px 0;
-    background-color: #1a1a1a;
+    background-color: #121214;
     overflow: hidden;
   }
   .wiz-thumb .mini-l3 {
@@ -549,12 +779,20 @@
     display: flex; align-items: center; gap: 8px;
   }
   .wiz-thumb .mini-logo {
-    width: 28px; height: 28px; border-radius: 6px;
+    width: 28px; height: 28px; border-radius: 7px;
     background: radial-gradient(circle at 40% 40%, #6af, #14a, #023);
     flex: 0 0 28px;
+    background-size: cover; background-position: center;
+  }
+  .wiz-thumb .mini-logo.has-img {
+    background-image: none;
+    overflow: hidden;
+  }
+  .wiz-thumb .mini-logo.has-img img {
+    width: 100%; height: 100%; object-fit: contain; display: block;
   }
   .wiz-thumb .mini-card {
-    flex: 1; min-width: 0; border-radius: 5px; padding: 6px 8px 6px 10px;
+    flex: 1; min-width: 0; border-radius: 6px; padding: 6px 8px 6px 10px;
     position: relative; overflow: hidden;
   }
   .wiz-thumb .mini-card::before {
@@ -562,51 +800,684 @@
   }
   .wiz-thumb .mini-name {
     font-size: 11px; font-weight: 700; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis;
+    overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em;
   }
   .wiz-thumb .mini-title {
     font-size: 9px; opacity: .85; white-space: nowrap;
     overflow: hidden; text-overflow: ellipsis; margin-top: 2px;
   }
-  .wiz-option .meta { padding: 8px 10px 10px; }
-  .wiz-option .meta .t { font-size: 12px; font-weight: 650; }
-  .wiz-option .meta .s { font-size: 10px; color: #8b9bb0; margin-top: 2px; }
+  .wiz-option .meta { padding: 10px 12px 12px; }
+  .wiz-option .meta .t { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .wiz-option .meta .s { font-size: 11px; color: var(--ui-muted); margin-top: 3px; }
   .wiz-panel {
-    background: #161b22; border: 1px solid #2a3340;
-    border-radius: 12px; padding: 16px; margin-bottom: 14px;
+    background: rgba(28,28,30,0.7);
+    border: 1px solid var(--ui-line);
+    border-radius: 18px;
+    padding: 22px 22px 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--ui-shadow-sm);
   }
-  .wiz-panel h2 { margin: 0 0 8px; font-size: 16px; }
-  .wiz-panel p { margin: 0 0 12px; color: #8b9bb0; font-size: 13px; line-height: 1.4; }
-  .wiz-source-tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .wiz-panel h2 {
+    margin: 0 0 6px; font-size: 22px; font-weight: 650;
+    letter-spacing: -0.03em;
+  }
+  .wiz-panel p { margin: 0 0 16px; color: var(--ui-muted); font-size: 14px; line-height: 1.45; }
+  .wiz-source-tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
   .wiz-source-tabs button {
-    border: 1px solid #2a3340; background: #0e1116; color: #c5d4ea;
-    border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--ui-line-strong);
+    background: rgba(255,255,255,0.05);
+    color: var(--ui-text);
+    border-radius: 980px; padding: 8px 14px; cursor: pointer;
+    font-size: 12px; font-weight: 600; font-family: inherit;
+    transition: background .15s, border-color .15s;
   }
-  .wiz-source-tabs button.on { background: #3d8bfd; color: #fff; border-color: #3d8bfd; }
-  .wiz-field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 11px; color: #8b9bb0; }
+  .wiz-source-tabs button.on {
+    background: var(--ui-accent); color: #fff; border-color: transparent;
+  }
+  .wiz-field { display: grid; gap: 5px; margin-bottom: 12px; font-size: 11px; color: var(--ui-muted); font-weight: 500; }
   .wiz-field input[type=text], .wiz-field input[type=url], .wiz-field textarea, .wiz-field select {
-    background: #0e1116; color: #e8eef6; border: 1px solid #2a3340;
-    border-radius: 8px; padding: 9px 10px; font-size: 13px; width: 100%;
+    background: rgba(255,255,255,0.06); color: var(--ui-text);
+    border: 1px solid var(--ui-line-strong);
+    border-radius: 10px; padding: 11px 12px; font-size: 14px; width: 100%;
+    font-family: inherit;
   }
-  .wiz-field textarea { min-height: 100px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
-  .wiz-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+  .wiz-field input:focus, .wiz-field textarea:focus, .wiz-field select:focus {
+    outline: none; border-color: rgba(10,132,255,0.65);
+    box-shadow: 0 0 0 3px var(--ui-accent-soft);
+  }
+  .wiz-field textarea { min-height: 110px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .wiz-swatches { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; }
   .wiz-swatch {
-    width: 42px; height: 42px; border-radius: 10px; border: 2px solid #2a3340;
+    width: 44px; height: 44px; border-radius: 12px;
+    border: 2px solid transparent;
     cursor: pointer; padding: 0;
+    transition: transform .12s, box-shadow .12s;
   }
-  .wiz-swatch.on { border-color: #fff; box-shadow: 0 0 0 2px #3d8bfd; }
-  .wiz-color-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-  .wiz-color-row label { font-size: 11px; color: #8b9bb0; display: grid; gap: 4px; }
+  .wiz-swatch:hover { transform: scale(1.06); }
+  .wiz-swatch.on { border-color: #fff; box-shadow: 0 0 0 3px var(--ui-accent); }
+  .wiz-color-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .wiz-color-row label { font-size: 11px; color: var(--ui-muted); display: grid; gap: 5px; font-weight: 500; }
   .wiz-color-row input[type=color] {
-    width: 100%; height: 36px; border: 1px solid #2a3340; border-radius: 8px; background: #0e1116;
+    width: 100%; height: 40px; border: 1px solid var(--ui-line-strong);
+    border-radius: 10px; background: rgba(255,255,255,0.06);
   }
   .btn-wiz {
-    border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 650; font-size: 13px; cursor: pointer;
+    border: 0; border-radius: 980px; padding: 11px 20px;
+    font-weight: 600; font-size: 13px; cursor: pointer;
+    font-family: inherit;
+    transition: transform .12s, filter .12s;
   }
-  .btn-wiz.primary { background: #3d8bfd; color: #fff; }
-  .btn-wiz.ghost { background: transparent; color: #e8eef6; border: 1px solid #2a3340; }
-  .btn-wiz:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-wiz:active { transform: scale(0.97); }
+  .btn-wiz.primary {
+    background: var(--ui-accent); color: #fff;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 20px rgba(10,132,255,0.28);
+  }
+  .btn-wiz.ghost {
+    background: rgba(255,255,255,0.06); color: var(--ui-text);
+    border: 1px solid var(--ui-line-strong);
+  }
+  .btn-wiz:disabled { opacity: .4; cursor: not-allowed; transform: none; }
   body.wizard-open { overflow: hidden; }
+
+
+  /* ===== STYLE LIBRARY: Civic (default) + Aventura Dual ===== */
+  .style-lib {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .style-lib-card {
+    border: 1px solid var(--ui-line-strong);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    padding: 8px;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+    font-family: inherit;
+    transition: border-color .15s, box-shadow .15s, transform .12s;
+  }
+  .style-lib-card:hover { border-color: rgba(10,132,255,0.45); transform: translateY(-1px); }
+  .style-lib-card.on {
+    border-color: rgba(10,132,255,0.85);
+    box-shadow: 0 0 0 2px var(--ui-accent-soft);
+    background: rgba(10,132,255,0.08);
+  }
+  .style-lib-card .sl-thumb {
+    height: 56px; border-radius: 8px; position: relative; overflow: hidden;
+    background: #0a0a0c; margin-bottom: 6px;
+  }
+  .style-lib-card .sl-t { font-size: 11px; font-weight: 650; letter-spacing: -0.01em; }
+  .style-lib-card .sl-s { font-size: 10px; color: var(--ui-muted); margin-top: 2px; line-height: 1.3; }
+
+  /*
+   * Aventura Dual — stage layout (Claude + AE tokens, slightly tighter than full AE 168)
+   * Name TOP (navy) · Title BOTTOM (sky) · seal on top with overlap · no glow.
+   * Landscape package scale ~0.88 (less bulky). 9:16 uses --l3-pkg-scale uniformly.
+   * Canvas export uses true evenodd notch. Tokens @1920 base then scaled.
+   */
+  .l3[data-style="aventura-dual"] {
+    --seal: 148px;
+    --badge-overlap: 55px;
+    --name-bar-h: 68px;
+    --title-bar-h: 38px;
+    --bar-gap: 6px;
+    --pad-name-l: 72px;
+    --pad-name-r: 34px;
+    --pad-title-l: 68px;
+    --pad-title-r: 28px;
+    --dual-name-size: 48px;
+    --dual-title-size: 26px;
+    --dual-name-bg: #0F2549;
+    --dual-title-bg: #2EA3E8;
+    --dual-name-fg: #FFFFFF;
+    --dual-title-fg: #06131F;
+    --name-font: "Bebas Neue", "Oswald", "Arial Narrow", Impact, sans-serif;
+    --title-font: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+    /* --l3-pkg-scale inherited from .stage (1 landscape / 0.70 portrait) — do not reset here */
+    /* MUST stay absolute — relative + bottom clips the name plate out of stage */
+    position: absolute !important;
+    left: var(--l3-left);
+    bottom: var(--l3-bottom);
+    top: auto !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    overflow: visible !important;
+    opacity: 1 !important;
+    transform: scale(var(--l3-pkg-scale, 1)) !important;
+    transform-origin: left bottom !important;
+    max-width: none;
+  }
+  .stage.portrait .l3[data-style="aventura-dual"] {
+    transform: scale(var(--l3-pkg-scale, 0.70)) !important;
+    transform-origin: left bottom !important;
+    left: 5.5% !important;
+    bottom: 5.5% !important;
+  }
+  .l3[data-style="aventura-dual"].show,
+  .l3[data-style="aventura-dual"].hide {
+    animation: none !important;
+  }
+  .l3[data-style="aventura-dual"] .logo-box {
+    position: relative;
+    z-index: 20;
+    width: var(--seal) !important;
+    height: var(--seal) !important;
+    flex: 0 0 var(--seal) !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    margin-right: calc(var(--badge-overlap) * -1) !important;
+    background: #0a1528 !important;
+    /* no glow — clean seal only */
+    box-shadow: none !important;
+    filter: none !important;
+  }
+  .l3[data-style="aventura-dual"] .logo-box img,
+  .l3[data-style="aventura-dual"] .logo-box canvas.logo-canvas,
+  .l3[data-style="aventura-dual"] .logo-box video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    border-radius: 50%;
+    display: block;
+  }
+  .l3[data-style="aventura-dual"] .card {
+    position: relative;
+    z-index: 2;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    gap: var(--bar-gap);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-width: 0;
+    max-width: none !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+  }
+  .l3[data-style="aventura-dual"] .card::before { display: none !important; }
+
+  .l3[data-style="aventura-dual"] .name-bar,
+  .l3[data-style="aventura-dual"] .title-bar {
+    position: relative;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: none;
+    overflow: visible !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.28);
+    opacity: 1;
+  }
+  .l3[data-style="aventura-dual"] .name-bar {
+    height: var(--name-bar-h);
+    min-height: var(--name-bar-h);
+    background: var(--dual-name-bg) !important;
+    padding: 0 var(--pad-name-r) 0 var(--pad-name-l) !important;
+    border-radius: 0 12px 5px 0;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 100%, 0 100%);
+  }
+  .l3[data-style="aventura-dual"] .title-bar {
+    height: var(--title-bar-h);
+    min-height: var(--title-bar-h);
+    background: var(--dual-title-bg) !important;
+    padding: 0 var(--pad-title-r) 0 var(--pad-title-l) !important;
+    border-radius: 0 10px 5px 0;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 0 100%);
+  }
+  .l3[data-style="aventura-dual"] .name {
+    font-family: var(--name-font) !important;
+    font-weight: 400 !important;
+    font-size: var(--dual-name-size, 48px) !important;
+    line-height: 1 !important;
+    letter-spacing: 0.018em !important;
+    color: var(--dual-name-fg) !important;
+    -webkit-text-fill-color: var(--dual-name-fg) !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: none !important;
+    -webkit-font-smoothing: antialiased;
+  }
+  .l3[data-style="aventura-dual"] .title {
+    font-family: var(--title-font) !important;
+    font-weight: 700 !important;
+    font-size: var(--dual-title-size, 26px) !important;
+    line-height: 1 !important;
+    letter-spacing: 0.13em !important;
+    color: var(--dual-title-fg) !important;
+    -webkit-text-fill-color: var(--dual-title-fg) !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: none !important;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Civic bars transparent */
+  .l3[data-style="civic"] .name-bar,
+  .l3[data-style="civic"] .title-bar {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0;
+    box-shadow: none;
+    max-width: none;
+    height: auto;
+    min-height: 0;
+    clip-path: none !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  /* Dual entrance — only when .dual-anim is set; hold state never depends on fill-mode */
+  @keyframes dualLogoIn {
+    0% { opacity: 0; transform: scale(0.72); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes dualNameIn {
+    0% { opacity: 0; transform: translateX(-28px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes dualTitleIn {
+    0% { opacity: 0; transform: translateX(-20px); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  .l3[data-style="aventura-dual"].dual-anim .logo-box {
+    animation: dualLogoIn 0.40s cubic-bezier(.16,1,.3,1) 0.03s both;
+  }
+  .l3[data-style="aventura-dual"].dual-anim .name-bar {
+    animation: dualNameIn 0.52s cubic-bezier(.16,1,.3,1) 0.10s both;
+  }
+  .l3[data-style="aventura-dual"].dual-anim .title-bar {
+    animation: dualTitleIn 0.52s cubic-bezier(.16,1,.3,1) 0.22s both;
+  }
+  /* Hold / resting dual: always fully visible (no stuck opacity:0 from animation fill) */
+  .l3[data-style="aventura-dual"]:not(.dual-anim) .logo-box,
+  .l3[data-style="aventura-dual"]:not(.dual-anim) .name-bar,
+  .l3[data-style="aventura-dual"]:not(.dual-anim) .title-bar {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+100% { opacity: 1; transform: translateX(0); }
+  }
+
+
+
+
+  /* ===== L3 layout variants (wizard designs) ===== */
+  .l3[data-layout="row"] { flex-direction: row; align-items: center; }
+  .l3[data-layout="row-reverse"] { flex-direction: row-reverse; align-items: center; }
+  .l3[data-layout="stack"] { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .l3[data-layout="stack-center"] { flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+  .l3[data-layout="stack-center"] .card { text-align: center; }
+  .l3[data-layout="stack-center"] .card::before { display: none; }
+  .l3[data-layout="banner"] {
+    left: 0 !important; right: 0; bottom: 0 !important;
+    max-width: 100% !important; width: 100%;
+    padding: 0 4%; box-sizing: border-box;
+  }
+  .l3[data-layout="banner"] .card {
+    flex: 1; border-radius: 0 !important; min-width: 0;
+  }
+  .l3[data-layout="strip"] {
+    left: 0 !important; right: 0; bottom: 8% !important;
+    max-width: 100% !important; width: 100%;
+    padding: 0; gap: 0;
+  }
+  .l3[data-layout="strip"] .card {
+    flex: 1; border-radius: 0 !important; min-width: 0;
+    padding-left: 20px !important;
+  }
+  .l3[data-layout="logo-float"] { align-items: flex-end; }
+  .l3[data-layout="logo-float"] .logo-box {
+    transform: translateY(-8px);
+  }
+  .l3[data-accent="top"] .card::before {
+    left: 0; right: 0; top: 0; bottom: auto; width: 100%; height: var(--accent-w);
+  }
+  .l3[data-accent="bottom"] .card::before {
+    left: 0; right: 0; top: auto; bottom: 0; width: 100%; height: var(--accent-w);
+  }
+  .l3[data-accent="right"] .card::before {
+    left: auto; right: 0; top: 0; bottom: 0; width: var(--accent-w); height: auto;
+  }
+  .l3[data-accent="none"] .card::before { display: none; }
+  .l3[data-accent="fullleft"] .card {
+    border-left: var(--accent-w) solid var(--accent);
+  }
+  .l3[data-accent="fullleft"] .card::before { display: none; }
+  .l3[data-namecase="upper"] .name { text-transform: uppercase; letter-spacing: 0.06em; }
+  .l3[data-titlecase="upper"] .title { text-transform: uppercase; letter-spacing: 0.16em; font-size: calc(var(--title-size) * 0.92); }
+
+  /* ===== Wizard design thumbs — real structural variety ===== */
+  .wiz-thumb.layout-thumb {
+    height: 128px;
+    display: flex;
+    align-items: flex-end;
+    padding: 10px 12px;
+    box-sizing: border-box;
+  }
+  .wiz-thumb .mini-stage-l3 {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; max-width: 100%;
+    transform-origin: left bottom;
+  }
+  .wiz-thumb .mini-stage-l3.lay-row-reverse { flex-direction: row-reverse; }
+  .wiz-thumb .mini-stage-l3.lay-stack { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .wiz-thumb .mini-stage-l3.lay-stack-center { flex-direction: column; align-items: center; gap: 6px; }
+  .wiz-thumb .mini-stage-l3.lay-banner,
+  .wiz-thumb .mini-stage-l3.lay-strip { width: 100%; }
+  .wiz-thumb .mini-stage-l3.lay-banner .mini-card,
+  .wiz-thumb .mini-stage-l3.lay-strip .mini-card { border-radius: 0 !important; flex: 1; }
+  .wiz-thumb .mini-logo.lg { width: 36px; height: 36px; flex-basis: 36px; }
+  .wiz-thumb .mini-logo.sm { width: 22px; height: 22px; flex-basis: 22px; }
+  .wiz-thumb .mini-logo.xl { width: 42px; height: 42px; flex-basis: 42px; }
+  .wiz-thumb .mini-card.pill { border-radius: 999px !important; padding-left: 14px !important; padding-right: 14px !important; }
+  .wiz-thumb .mini-card.sharp { border-radius: 2px !important; }
+  .wiz-thumb .mini-card.glass { backdrop-filter: blur(4px); opacity: 0.92; }
+  .wiz-thumb .mini-name.upper { text-transform: uppercase; letter-spacing: 0.05em; font-size: 10px; }
+  .wiz-thumb .mini-title.upper { text-transform: uppercase; letter-spacing: 0.12em; font-size: 8px; }
+  .wiz-thumb .acc-top { position: absolute; left: 0; right: 0; top: 0; height: 3px; }
+  .wiz-thumb .acc-bot { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; }
+  .wiz-thumb .acc-right { position: absolute; right: 0; top: 0; bottom: 0; width: 4px; }
+  .wiz-thumb .acc-left { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+  .wiz-thumb .acc-thick { width: 8px !important; }
+  .wiz-thumb .acc-thin { width: 2px !important; }
+  .wiz-thumb .overline {
+    font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.75; margin-bottom: 2px; font-weight: 650;
+  }
+  .wiz-option .meta .tag {
+    display: inline-block; margin-top: 4px; margin-right: 4px;
+    font-size: 9px; padding: 2px 6px; border-radius: 999px;
+    background: rgba(255,255,255,0.06); color: var(--ui-muted);
+    border: 1px solid var(--ui-line);
+  }
+
+  /* ===== Wizard motion previews (live CSS) ===== */
+  .wiz-anim-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  .wiz-anim-card {
+    border: 1px solid var(--ui-line-strong);
+    border-radius: 16px;
+    background: rgba(28,28,30,0.75);
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
+    color: inherit;
+    font-family: inherit;
+    transition: border-color .18s, box-shadow .18s, transform .18s;
+  }
+  .wiz-anim-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(10,132,255,0.45);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  }
+  .wiz-anim-card.selected {
+    border-color: rgba(10,132,255,0.85);
+    box-shadow: 0 0 0 3px var(--ui-accent-soft);
+  }
+  .wiz-anim-stage {
+    height: 132px;
+    position: relative;
+    overflow: hidden;
+    background:
+      linear-gradient(45deg, #1a1a1c 25%, transparent 25%),
+      linear-gradient(-45deg, #1a1a1c 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #1a1a1c 75%),
+      linear-gradient(-45deg, transparent 75%, #1a1a1c 75%);
+    background-size: 14px 14px;
+    background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+    background-color: #0e0e10;
+  }
+  .wiz-anim-stage .wa-l3 {
+    position: absolute;
+    left: 14px; bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+    max-width: calc(100% - 28px);
+    will-change: transform, opacity, filter;
+  }
+  .wiz-anim-stage .wa-logo {
+    width: 30px; height: 30px; border-radius: 7px; flex: 0 0 30px;
+    background: radial-gradient(circle at 40% 40%, #6af, #14a, #023);
+    background-size: cover; overflow: hidden;
+  }
+  .wiz-anim-stage .wa-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .wiz-anim-stage .wa-card {
+    position: relative; border-radius: 6px; padding: 7px 10px 7px 12px;
+    min-width: 120px; overflow: hidden;
+  }
+  .wiz-anim-stage .wa-card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  }
+  .wiz-anim-stage .wa-name {
+    font-size: 12px; font-weight: 700; white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+  .wiz-anim-stage .wa-title {
+    font-size: 9px; opacity: 0.88; margin-top: 2px; white-space: nowrap;
+  }
+  .wiz-anim-card .meta { padding: 10px 12px 12px; }
+  .wiz-anim-card .meta .t { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .wiz-anim-card .meta .s { font-size: 11px; color: var(--ui-muted); margin-top: 3px; }
+  .wiz-anim-hero {
+    margin-bottom: 16px;
+    border-radius: 18px;
+    border: 1px solid var(--ui-line);
+    overflow: hidden;
+    background: rgba(28,28,30,0.7);
+  }
+  .wiz-anim-hero .wiz-anim-stage { height: 180px; }
+  .wiz-anim-hero .wa-l3 { left: 28px; bottom: 28px; gap: 12px; }
+  .wiz-anim-hero .wa-logo { width: 44px; height: 44px; flex-basis: 44px; border-radius: 10px; }
+  .wiz-anim-hero .wa-card { padding: 12px 16px 12px 18px; min-width: 200px; border-radius: 8px; }
+  .wiz-anim-hero .wa-name { font-size: 18px; }
+  .wiz-anim-hero .wa-title { font-size: 12px; margin-top: 4px; }
+  .wiz-anim-hero .hero-cap {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px; border-top: 1px solid var(--ui-line);
+    font-size: 13px;
+  }
+  .wiz-anim-hero .hero-cap b { font-weight: 650; letter-spacing: -0.01em; }
+  .wiz-anim-hero .hero-cap span { color: var(--ui-muted); font-size: 12px; }
+
+  /* Keyframes — loop in → hold → out → gap */
+  @keyframes wa-slideUp {
+    0%, 5% { opacity: 0; transform: translateY(22px); }
+    22% { opacity: 1; transform: translateY(0); }
+    68% { opacity: 1; transform: translateY(0); }
+    85%, 100% { opacity: 0; transform: translateY(12px); }
+  }
+  @keyframes wa-slideLeft {
+    0%, 5% { opacity: 0; transform: translateX(-36px); }
+    22% { opacity: 1; transform: translateX(0); }
+    68% { opacity: 1; transform: translateX(0); }
+    85%, 100% { opacity: 0; transform: translateX(-24px); }
+  }
+  @keyframes wa-slideRight {
+    0%, 5% { opacity: 0; transform: translateX(36px); }
+    22% { opacity: 1; transform: translateX(0); }
+    68% { opacity: 1; transform: translateX(0); }
+    85%, 100% { opacity: 0; transform: translateX(24px); }
+  }
+  @keyframes wa-scaleFade {
+    0%, 5% { opacity: 0; transform: scale(0.88); }
+    22% { opacity: 1; transform: scale(1); }
+    68% { opacity: 1; transform: scale(1); }
+    85%, 100% { opacity: 0; transform: scale(1.06); }
+  }
+  @keyframes wa-riseBlur {
+    0%, 5% { opacity: 0; transform: translateY(28px); filter: blur(10px); }
+    28% { opacity: 1; transform: translateY(0); filter: blur(0); }
+    68% { opacity: 1; transform: translateY(0); filter: blur(0); }
+    88%, 100% { opacity: 0; transform: translateY(14px); filter: blur(6px); }
+  }
+  @keyframes wa-dropSoft {
+    0%, 5% { opacity: 0; transform: translateY(-18px); }
+    18% { opacity: 1; transform: translateY(4px); }
+    26% { transform: translateY(0); }
+    68% { opacity: 1; transform: translateY(0); }
+    85%, 100% { opacity: 0; transform: translateY(10px); }
+  }
+  @keyframes wa-maskWipe {
+    0%, 5% { clip-path: inset(0 100% 0 0); opacity: 1; }
+    28% { clip-path: inset(0 0 0 0); }
+    68% { clip-path: inset(0 0 0 0); opacity: 1; }
+    88%, 100% { clip-path: inset(0 0 0 100%); opacity: 1; }
+  }
+  @keyframes wa-logoLead-logo {
+    0%, 4% { opacity: 0; transform: scale(0.7); }
+    18% { opacity: 1; transform: scale(1); }
+    70% { opacity: 1; transform: scale(1); }
+    88%, 100% { opacity: 0; transform: scale(0.92); }
+  }
+  @keyframes wa-logoLead-card {
+    0%, 14% { opacity: 0; transform: translateX(-12px); }
+    32% { opacity: 1; transform: translateX(0); }
+    70% { opacity: 1; transform: translateX(0); }
+    88%, 100% { opacity: 0; transform: translateX(-8px); }
+  }
+  @keyframes wa-cut {
+    0%, 8% { opacity: 0; }
+    9% { opacity: 1; }
+    72% { opacity: 1; }
+    73%, 100% { opacity: 0; }
+  }
+  @keyframes wa-punch {
+    0%, 5% { opacity: 0; transform: scale(0.7); }
+    12% { opacity: 1; transform: scale(1.06); }
+    20% { transform: scale(1); }
+    68% { opacity: 1; transform: scale(1); }
+    82%, 100% { opacity: 0; transform: scale(0.96); }
+  }
+  @keyframes wa-drift {
+    0%, 5% { opacity: 0; transform: translate(18px, 10px); filter: blur(8px); }
+    30% { opacity: 1; transform: translate(0,0); filter: blur(0); }
+    68% { opacity: 1; transform: translate(0,0); filter: blur(0); }
+    90%, 100% { opacity: 0; transform: translate(-10px, -6px); filter: blur(6px); }
+  }
+  .wa-play-slideUp { animation: wa-slideUp var(--wa-dur, 3.2s) ease-in-out infinite; }
+  .wa-play-slideLeft { animation: wa-slideLeft var(--wa-dur, 3.2s) ease-in-out infinite; }
+  .wa-play-slideRight { animation: wa-slideRight var(--wa-dur, 3.2s) ease-in-out infinite; }
+  .wa-play-scaleFade { animation: wa-scaleFade var(--wa-dur, 3.2s) ease-in-out infinite; }
+  .wa-play-riseBlur { animation: wa-riseBlur var(--wa-dur, 3.6s) ease-in-out infinite; }
+  .wa-play-dropSoft { animation: wa-dropSoft var(--wa-dur, 3.4s) ease-in-out infinite; }
+  .wa-play-maskWipe { animation: wa-maskWipe var(--wa-dur, 3.4s) ease-in-out infinite; }
+  .wa-play-none { animation: wa-cut var(--wa-dur, 2.8s) linear infinite; }
+  .wa-play-punch { animation: wa-punch var(--wa-dur, 2.6s) ease-in-out infinite; }
+  .wa-play-drift { animation: wa-drift var(--wa-dur, 3.8s) ease-in-out infinite; }
+  .wa-play-logoLead .wa-logo { animation: wa-logoLead-logo var(--wa-dur, 3.6s) ease-in-out infinite; }
+  .wa-play-logoLead .wa-card { animation: wa-logoLead-card var(--wa-dur, 3.6s) ease-in-out infinite; }
+  .wa-play-logoLead { /* container static */ }
+  .wa-play-snappy { --wa-dur: 2.4s; }
+  .wa-play-slow { --wa-dur: 4.4s; }
+  .wa-play-med { --wa-dur: 3.2s; }
+
+
+
+  /* Logo picker cards in wizard */
+  .wiz-logo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .wiz-logo-card {
+    border: 1px solid var(--ui-line-strong);
+    border-radius: 16px;
+    background: rgba(28,28,30,0.75);
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+    font-family: inherit;
+    transition: border-color .18s, transform .18s, box-shadow .18s;
+  }
+  .wiz-logo-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(10,132,255,0.45);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+  }
+  .wiz-logo-card.selected {
+    border-color: rgba(10,132,255,0.85);
+    box-shadow: 0 0 0 3px var(--ui-accent-soft);
+    background: rgba(10,132,255,0.08);
+  }
+  .wiz-logo-preview {
+    height: 140px;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(255,255,255,0.06), transparent 60%),
+      #0a0a0c;
+    border-bottom: 1px solid var(--ui-line);
+  }
+  .wiz-logo-preview img, .wiz-logo-preview canvas, .wiz-logo-preview video {
+    max-width: 88px; max-height: 88px; object-fit: contain;
+    filter: drop-shadow(0 8px 20px rgba(0,0,0,0.45));
+  }
+  .wiz-logo-preview .ph {
+    width: 72px; height: 72px; border-radius: 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px dashed rgba(255,255,255,0.18);
+    display: grid; place-items: center;
+    color: var(--ui-muted); font-size: 11px; text-align: center; padding: 8px;
+  }
+  .wiz-logo-card .meta { padding: 12px 14px 14px; }
+  .wiz-logo-card .meta .t { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .wiz-logo-card .meta .s { font-size: 11px; color: var(--ui-muted); margin-top: 3px; line-height: 1.35; }
+  .wiz-logo-actions {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+  }
+  .wiz-logo-actions label.btn-wiz,
+  .wiz-logo-actions button {
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .wiz-logo-status {
+    font-size: 12px; color: var(--ui-muted); margin-top: 10px; min-height: 1.2em;
+  }
+  .wiz-done-hero {
+    display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+  }
+  .wiz-done-logo {
+    width: 96px; height: 96px; border-radius: 20px;
+    background: #0a0a0c; display: grid; place-items: center;
+    border: 1px solid var(--ui-line);
+    overflow: hidden;
+  }
+  .wiz-done-logo img { max-width: 72px; max-height: 72px; object-fit: contain; }
+  .wiz-done-list {
+    list-style: none; padding: 0; margin: 0;
+    color: var(--ui-text); font-size: 14px; line-height: 1.7;
+  }
+  .wiz-done-list li span { color: var(--ui-muted); display: inline-block; min-width: 72px; }
 
 </style>
 </head>
@@ -614,7 +1485,7 @@
 
 <div id="wizard" aria-modal="true" role="dialog" aria-label="Design wizard">
   <div class="wiz-top">
-    <h1>New lower-third design</h1>
+    <h1>New Design</h1>
     <div class="wiz-steps" id="wizSteps"></div>
     <button type="button" class="btn-wiz ghost" id="wizCancel">Cancel</button>
   </div>
@@ -629,9 +1500,9 @@
 
 <header>
   <h1>Lower Third Studio</h1>
-  <span class="tag tag-long">cityofaventura.com · 30-Year logo</span>
+  <span class="tag tag-long">City of Aventura · Design</span>
   <div class="spacer"></div>
-  <button type="button" class="btn-wiz primary" id="btnNewDesign" style="padding:7px 12px;font-size:12px">+ New design</button>
+  <button type="button" class="btn-wiz primary" id="btnNewDesign">New Design</button>
   <div class="mode-toggle" title="Simple = fast results · Advanced = full controls">
     <button type="button" id="modeSimple" class="on">Simple</button>
     <button type="button" id="modeAdvanced">Advanced</button>
@@ -640,7 +1511,14 @@
 </header>
 
 <aside>
-  <p class="simple-hero-hint">Pick a person → preview → <b>Download animation</b> (full PNG sequence + motion blur). Open <b>Advanced</b> for colors, fonts, timing, WebM, or stills.</p>
+  <p class="simple-hero-hint">Select a person, preview on the stage, then <b>Download animation</b>. Switch <b>Style</b> for package looks. Use <b>New Design</b> for a custom build.</p>
+
+  <div class="sec" style="margin-bottom:10px">
+    <h2>Style library</h2>
+    <div class="style-lib" id="styleLib"></div>
+    <p class="hint" style="margin:0">Animated logo always uses <b>play once → hold last</b> unless you change it in Advanced.</p>
+  </div>
+
   <input type="search" class="simple-search" id="peopleSearch" placeholder="Search name or title…" autocomplete="off" />
 
   <div class="stack-btns" style="margin-bottom:8px">
@@ -652,6 +1530,22 @@
     <input type="checkbox" id="simpleViceMayor" />
     <span><b>Vice Mayor</b> title for selected</span>
   </label>
+
+  <div class="simple-preset-bar" id="simplePresetBar">
+    <h2>Presets</h2>
+    <select id="simplePresetSelect" title="Switch design preset" aria-label="Switch preset">
+      <option value="">— Current look (unsaved) —</option>
+    </select>
+    <div class="stack-btns">
+      <button type="button" class="btn" id="btnSimpleSavePreset" title="Save current look as a preset">Save</button>
+      <button type="button" class="btn ghost" id="btnSimpleSaveAsPreset" title="Save under a new name">Save as…</button>
+      <label class="btn ghost" style="display:inline-block;cursor:pointer;margin:0" title="Import .l3preset.json">
+        Import
+        <input type="file" id="fileSimplePreset" accept="application/json,.json,.l3preset.json" hidden />
+      </label>
+    </div>
+    <p class="hint" style="margin-top:8px;margin-bottom:0">Switch looks here. Wizard designs land in this list. Advanced has full manage / export.</p>
+  </div>
 
   <div class="sec" style="margin-bottom:8px">
     <h2>People <span id="count" class="tag"></span></h2>
@@ -735,6 +1629,11 @@
     <button type="button" class="btn-sec" data-aspect="16x9">16:9</button>
     <button type="button" class="btn-sec" data-aspect="9x16">9:16</button>
     <div class="grow"></div>
+    <label class="preset-inline" title="Switch preset">
+      <select id="simplePresetSelectBar" aria-label="Switch preset">
+        <option value="">Presets…</option>
+      </select>
+    </label>
     <span class="pill" id="simpleExportHint" style="font-size:11px">Full quality PNG sequence + motion blur</span>
     <button type="button" class="btn-sec" id="btnNewDesignSimple">+ New design</button>
     <button type="button" class="btn-sec" id="btnOpenAdvanced">More controls…</button>
@@ -755,13 +1654,17 @@
   </div>
   <div class="viewport">
     <div class="stage" id="stage">
-      <div class="l3 show" id="l3">
+      <div class="l3 show" id="l3" data-style="civic">
         <div class="logo-box" id="logoBox">
           <img id="logoImg" alt="Logo" />
         </div>
-        <div class="card">
-          <div class="name" id="nameEl">Name</div>
-          <div class="title" id="titleEl">Title</div>
+        <div class="card" id="cardEl">
+          <div class="name-bar" id="nameBar">
+            <div class="name" id="nameEl">Name</div>
+          </div>
+          <div class="title-bar" id="titleBar">
+            <div class="title" id="titleEl">Title</div>
+          </div>
         </div>
       </div>
     </div>
@@ -959,6 +1862,7 @@
           <option value="logoLead">Logo first, then type</option>
           <option value="dropSoft">Soft drop · settle</option>
           <option value="none">None (cut)</option>
+          <option value="dualStack">Dual stack wipe (Aventura package)</option>
         </select>
       </label>
       <div class="row2">
@@ -1270,6 +2174,208 @@ const EMBEDDED_PEOPLE = [
   }
 ];
 const STORAGE_KEY = "l3studio.presets.v1";
+
+/* ── Style library (package looks) ── */
+const STYLE_LIBRARY = {
+  civic: {
+    id: "civic",
+    name: "Civic Gold",
+    blurb: "Classic single panel · accent rail · our default",
+    theme: {
+      panelTop: "#12305c", panelBot: "#0b1f3d", accent: "#c9a24a",
+      nameColor: "#ffffff", titleColor: "#b8c9de", panelAlpha: "0.94",
+      nameSize: "40px", titleSize: "18px",
+      nameTracking: "0.04em", titleTracking: "0.12em",
+      nameWeight: "600", titleWeight: "500",
+      logoSize: "92px", gapLogo: "16px",
+      radius: "6px", accentW: "5px", padX: "28px", padY: "18px",
+    },
+    layout: "row",
+    nameCase: "none",
+    titleCase: "none",
+    animStyle: "slideUp",
+    animIn: 0.55, animHold: 3, animOut: 0.4,
+    logoPlayMode: "once",
+    dual: null,
+  },
+  "aventura-dual": {
+    id: "aventura-dual",
+    name: "Aventura Dual",
+    blurb: "Bebas + Montserrat · circular notch · 12° cut (broadcast package)",
+    theme: {
+      panelTop: "#0F2549", panelBot: "#0F2549", accent: "#2EA3E8",
+      nameColor: "#FFFFFF", titleColor: "#06131F", panelAlpha: "1",
+      // Tighter package (less bulky than full AE 168/54/30)
+      nameSize: "48px", titleSize: "26px",
+      nameTracking: "0.018em", titleTracking: "0.13em",
+      nameWeight: "400", titleWeight: "700",
+      fontName: '"Bebas Neue", "Oswald", "Arial Narrow", Impact, sans-serif',
+      fontTitle: '"Montserrat", "Helvetica Neue", Arial, sans-serif',
+      logoSize: "148px", gapLogo: "0px",
+      radius: "12px", accentW: "0px", padX: "34px", padY: "10px",
+    },
+    layout: "row",
+    nameCase: "upper",
+    titleCase: "upper",
+    animStyle: "dualStack",
+    animIn: 0.62, animHold: 3.5, animOut: 0.32,
+    logoPlayMode: "once",
+    dual: {
+      nameBg: "#0F2549",
+      titleBg: "#2EA3E8",
+      nameFg: "#FFFFFF",
+      titleFg: "#06131F",
+      seal: 148,
+      badgeOverlap: 55,
+      nameBarH: 68,
+      titleBarH: 38,
+      gapBarY: 6,
+      cutAngleDeg: 12,
+      cornerR: 10,
+      padLeftName: 72,
+      padRightName: 34,
+      padLeftTitle: 68,
+      padRightTitle: 28,
+      nameFontSize: 48,
+      titleFontSize: 26,
+      nameTracking: 0.018,
+      titleTracking: 0.13,
+      nameFont: '"Bebas Neue", "Oswald", Impact, sans-serif',
+      titleFont: '"Montserrat", "Helvetica Neue", Arial, sans-serif',
+    },
+  },
+};
+let activeStyleId = "civic";
+
+function renderStyleLibrary() {
+  const box = $("styleLib");
+  if (!box) return;
+  box.innerHTML = "";
+  for (const st of Object.values(STYLE_LIBRARY)) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "style-lib-card" + (activeStyleId === st.id ? " on" : "");
+    b.dataset.style = st.id;
+    // mini thumb
+    let thumb = "";
+    if (st.id === "aventura-dual") {
+      thumb = `<div class="sl-thumb" style="display:flex;align-items:center;padding:6px 4px">
+        <div style="width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#3a7ad9,#0a1a36);flex:0 0 28px;z-index:2;margin-right:-6px;box-shadow:0 2px 6px #0008"></div>
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+          <div style="height:12px;width:72px;background:#0B2545;border-radius:0 8px 8px 0"></div>
+          <div style="height:9px;width:58px;background:#4DA8E8;border-radius:0 8px 8px 0"></div>
+        </div>
+      </div>`;
+    } else {
+      thumb = `<div class="sl-thumb" style="display:flex;align-items:center;padding:10px 8px;gap:6px">
+        <div style="width:18px;height:18px;border-radius:4px;background:radial-gradient(circle at 40% 35%,#6af,#14a);flex:0 0 18px"></div>
+        <div style="flex:1;height:28px;border-radius:5px;background:linear-gradient(180deg,#12305c,#0b1f3d);border-left:3px solid #c9a24a"></div>
+      </div>`;
+    }
+    b.innerHTML = thumb + `<div class="sl-t">${st.name}</div><div class="sl-s">${st.blurb}</div>`;
+    b.onclick = () => applyStyleLibrary(st.id, { play: true });
+    box.appendChild(b);
+  }
+}
+
+function applyStyleLibrary(id, { play = true } = {}) {
+  const st = STYLE_LIBRARY[id] || STYLE_LIBRARY.civic;
+  activeStyleId = st.id;
+  const l3 = $("l3");
+  if (l3) {
+    l3.dataset.style = st.id;
+    l3.dataset.layout = st.layout || "row";
+    l3.dataset.namecase = st.nameCase === "upper" ? "upper" : "normal";
+    l3.dataset.titlecase = st.titleCase === "upper" ? "upper" : "normal";
+  }
+  // dual CSS vars
+  const root = document.documentElement;
+  if (st.dual) {
+    root.style.setProperty("--dual-name-bg", st.dual.nameBg);
+    root.style.setProperty("--dual-title-bg", st.dual.titleBg);
+    root.style.setProperty("--dual-name-fg", st.dual.nameFg);
+    root.style.setProperty("--dual-title-fg", st.dual.titleFg);
+    const sealPx = st.dual.seal || 148;
+    root.style.setProperty("--seal", sealPx + "px");
+    root.style.setProperty("--badge-overlap", (st.dual.badgeOverlap || 55) + "px");
+    root.style.setProperty("--name-bar-h", (st.dual.nameBarH || 68) + "px");
+    root.style.setProperty("--title-bar-h", (st.dual.titleBarH || 38) + "px");
+    root.style.setProperty("--bar-gap", (st.dual.gapBarY || 6) + "px");
+    root.style.setProperty("--pad-name-l", (st.dual.padLeftName || 72) + "px");
+    root.style.setProperty("--pad-name-r", (st.dual.padRightName || 34) + "px");
+    root.style.setProperty("--pad-title-l", (st.dual.padLeftTitle || 68) + "px");
+    root.style.setProperty("--pad-title-r", (st.dual.padRightTitle || 28) + "px");
+    root.style.setProperty("--dual-name-size", (st.dual.nameFontSize || 48) + "px");
+    root.style.setProperty("--dual-title-size", (st.dual.titleFontSize || 26) + "px");
+    // also set on l3 for scoped vars
+    if (l3) {
+      l3.style.setProperty("--seal", sealPx + "px");
+      l3.style.setProperty("--badge-overlap", (st.dual.badgeOverlap || 55) + "px");
+      l3.style.setProperty("--name-bar-h", (st.dual.nameBarH || 68) + "px");
+      l3.style.setProperty("--title-bar-h", (st.dual.titleBarH || 38) + "px");
+      l3.style.setProperty("--dual-name-size", (st.dual.nameFontSize || 48) + "px");
+      l3.style.setProperty("--dual-title-size", (st.dual.titleFontSize || 26) + "px");
+    }
+  }
+  // theme
+  if (typeof applyTheme === "function") {
+    applyTheme({ ...(typeof themeFromUI === "function" ? themeFromUI() : {}), ...st.theme });
+  }
+  // sync color inputs if present
+  const map = {
+    panelTop: "cPanelTop", panelBot: "cPanelBot", accent: "cAccent",
+    nameColor: "cName", titleColor: "cTitle",
+  };
+  for (const [k, idEl] of Object.entries(map)) {
+    if (st.theme[k] && $(idEl)) $(idEl).value = st.theme[k];
+  }
+  if (st.theme.panelAlpha && $("panelAlpha")) $("panelAlpha").value = parseFloat(st.theme.panelAlpha);
+  if (st.theme.logoSize && $("logoSize")) $("logoSize").value = parseInt(st.theme.logoSize, 10);
+  if (st.theme.nameSize && $("nameSize")) $("nameSize").value = parseInt(st.theme.nameSize, 10);
+  if (st.theme.titleSize && $("titleSize")) $("titleSize").value = parseInt(st.theme.titleSize, 10);
+  if (st.theme.fontName && $("fontName")) $("fontName").value = st.theme.fontName.replace(/^"|"$/g, "");
+  if (st.theme.fontTitle && $("fontTitle")) $("fontTitle").value = st.theme.fontTitle.replace(/^"|"$/g, "");
+  if (st.theme.nameTracking && $("nameTracking")) $("nameTracking").value = parseFloat(st.theme.nameTracking);
+  if (st.theme.titleTracking && $("titleTracking")) $("titleTracking").value = parseFloat(st.theme.titleTracking);
+  if (st.dual) {
+    const sealPx = st.dual.seal || 148;
+    root.style.setProperty("--seal", sealPx + "px");
+    root.style.setProperty("--notch", (sealPx * 0.5 + 2) + "px");
+    root.style.setProperty("--badge-overlap", (st.dual.badgeOverlap || 55) + "px");
+    root.style.setProperty("--name-bar-h", (st.dual.nameBarH || 68) + "px");
+    root.style.setProperty("--title-bar-h", (st.dual.titleBarH || 38) + "px");
+    root.style.setProperty("--bar-gap", (st.dual.gapBarY || 6) + "px");
+  }
+  // animation
+  if ($("animStyle")) {
+    // ensure dualStack option exists
+    const sel = $("animStyle");
+    if (st.animStyle === "dualStack" && ![...sel.options].some((o) => o.value === "dualStack")) {
+      const opt = document.createElement("option");
+      opt.value = "dualStack";
+      opt.textContent = "Dual stack wipe (Aventura)";
+      sel.appendChild(opt);
+    }
+    sel.value = st.animStyle;
+  }
+  if ($("animInDur")) $("animInDur").value = st.animIn;
+  if ($("animHoldDur")) $("animHoldDur").value = st.animHold;
+  if ($("animOutDur")) $("animOutDur").value = st.animOut;
+  // logo once → hold
+  if ($("logoPlayMode")) {
+    $("logoPlayMode").value = st.logoPlayMode || "once";
+    if (typeof applyLogoPlayMode === "function") applyLogoPlayMode();
+  }
+  try { localStorage.setItem("l3studio.styleId", st.id); } catch (_) {}
+  renderStyleLibrary();
+  if (typeof fitText === "function") fitText();
+  if (typeof renderPerson === "function") renderPerson();
+  if (typeof applyPortraitPackageScale === "function") applyPortraitPackageScale();
+  if (play && typeof playIn === "function") playIn();
+  if ($("statusPill")) $("statusPill").textContent = "Style: " + st.name + " · logo once→hold";
+  if (typeof persistState === "function") persistState();
+}
+
 const STATE_KEY = "l3studio.state.v1";
 
 const $ = (id) => document.getElementById(id);
@@ -1614,8 +2720,9 @@ function renderPerson() {
   const p = selected();
   if (!p) return;
   ensureBaseTitle(p);
-  $("nameEl").textContent = (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
-  $("titleEl").textContent = displayTitle(p);
+  const dual = isDualStyle();
+  $("nameEl").textContent = dual ? dualNameText(p) : (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
+  $("titleEl").textContent = dual ? dualTitleShort(p) : displayTitle(p);
   $("editName").value = p.legalName || p.name;
   if ($("editDisplayName")) $("editDisplayName").value = p.displayName || "";
   $("editTitle").value = p.baseTitle || p.title || "";
@@ -1637,42 +2744,16 @@ function fitText() {
   const name = $("nameEl");
   const title = $("titleEl");
   if (!name || !title) return;
-  const stage = $("stage");
-  const card = name.parentElement;
-  const portrait = stage && stage.classList.contains("portrait");
-  // Available width inside card (stage width minus logo/gap/margins)
-  const stageW = stage ? stage.clientWidth : 800;
-  const logoBox = $("logoBox");
-  const logoW = logoBox ? logoBox.getBoundingClientRect().width : (portrait ? 56 : 92);
-  const sidePad = portrait ? stageW * 0.10 : 72 + 40;
-  const max = Math.max(120, stageW - logoW - sidePad - 36);
+  // Full package size always — no per-glyph shrink, no "…" ellipsis.
+  // 9:16 uses uniform --l3-pkg-scale on the whole .l3 instead.
   name.style.fontSize = "";
   title.style.fontSize = "";
-  // Let CSS portrait clamps apply first
-  if (portrait) {
-    // ellipsis CSS handles overflow; only shrink if still overflowing
-    let ns = parseFloat(getComputedStyle(name).fontSize);
-    let ts = parseFloat(getComputedStyle(title).fontSize);
-    let guard = 40;
-    while (name.scrollWidth > max && ns > 13 && guard--) {
-      ns -= 0.5; name.style.fontSize = ns + "px";
-    }
-    guard = 40;
-    while (title.scrollWidth > max && ts > 10 && guard--) {
-      ts -= 0.5; title.style.fontSize = ts + "px";
-    }
-    return;
-  }
-  let ns = parseFloat(getComputedStyle(root).getPropertyValue("--name-size"));
-  let ts = parseFloat(getComputedStyle(root).getPropertyValue("--title-size"));
-  let guard = 60;
-  while (name.scrollWidth > max && ns > 16 && guard--) {
-    ns -= 1; name.style.fontSize = ns + "px";
-  }
-  guard = 60;
-  while (title.scrollWidth > max && ts > 11 && guard--) {
-    ts -= 1; title.style.fontSize = ts + "px";
-  }
+  name.style.maxWidth = "";
+  title.style.maxWidth = "";
+  name.style.overflow = "";
+  title.style.overflow = "";
+  name.style.textOverflow = "";
+  title.style.textOverflow = "";
 }
 
 function renderList() {
@@ -1700,9 +2781,59 @@ function renderList() {
 
 function playIn() {
   const l3 = $("l3");
-  l3.classList.remove("show", "hide");
+  if (!l3) return;
+  l3.classList.remove("show", "hide", "dual-anim");
+  // clear any leftover inline transforms from preview
+  l3.style.transform = "";
+  l3.style.opacity = "";
+  l3.style.filter = "";
+  l3.style.clipPath = "";
+  const logo = $("logoBox");
+  const nameBar = $("nameBar");
+  const titleBar = $("titleBar");
+  const card = $("cardEl") || l3.querySelector(".card");
+  [logo, nameBar, titleBar, card].forEach((el) => {
+    if (!el) return;
+    el.style.animation = "none";
+    el.style.transform = "";
+    el.style.opacity = "";
+    el.style.clipPath = "";
+  });
   void l3.offsetWidth;
   renderPerson();
+  // re-enable CSS entrance animations
+  [logo, nameBar, titleBar, card].forEach((el) => {
+    if (el) el.style.animation = "";
+  });
+  const dual = activeStyleId === "aventura-dual" || l3.dataset.style === "aventura-dual";
+  if (dual) {
+    // Dedicated dual entrance — never leave bars stuck at opacity 0
+    // Clear inline transform so CSS package scale (incl. 9:16) applies
+    l3.style.opacity = "1";
+    l3.style.transform = "";
+    l3.classList.add("show", "dual-anim");
+    replayLogo();
+    if ($("logoPlayMode")) {
+      if ($("logoPlayMode").value !== "once" && $("logoPlayMode").value !== "hold") {
+        $("logoPlayMode").value = "once";
+        if (typeof applyLogoPlayMode === "function") applyLogoPlayMode();
+      }
+    }
+    // After entrance completes, drop dual-anim so hold CSS forces opacity:1
+    clearTimeout(playIn._dualHoldT);
+    playIn._dualHoldT = setTimeout(() => {
+      if (!l3.isConnected) return;
+      l3.classList.remove("dual-anim");
+      l3.style.transform = "";
+      [logo, nameBar, titleBar].forEach((el) => {
+        if (!el) return;
+        el.style.opacity = "1";
+        el.style.transform = "none";
+        el.style.animation = "";
+      });
+    }, 900);
+    return;
+  }
   l3.classList.add("show");
   replayLogo();
 }
@@ -1766,37 +2897,139 @@ function parseCsv(text) {
   return rows;
 }
 
+let activePresetId = null;
+
 function loadPresets() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-  catch { return []; }
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list.filter((p) => p && typeof p === "object" && p.name) : [];
+  } catch {
+    return [];
+  }
 }
 function savePresets(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  const safe = Array.isArray(list) ? list.slice() : [];
+  try {
+    let working = safe;
+    let ok = false;
+    while (working.length && !ok) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(working));
+        ok = true;
+      } catch (e) {
+        // Never wipe the whole list — drop oldest entries only
+        working = working.slice(0, -1);
+      }
+    }
+    if (!ok && safe.length) {
+      // last resort: keep first preset only (newest is unshifted first)
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(safe.slice(0, 1))); } catch (_) {}
+    }
+  } catch (e) {
+    console.warn("savePresets failed", e);
+    if ($("statusPill")) $("statusPill").textContent = "Could not save presets (storage full)";
+  }
   renderPresets();
 }
-function renderPresets() {
-  const box = $("presetList");
-  box.innerHTML = "";
-  const list = loadPresets();
-  if (!list.length) {
-    box.innerHTML = '<p class="hint">No saved presets yet.</p>';
-    return;
-  }
+function fillPresetSelect(sel, list, activeId) {
+  if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = "";
+  const ph = document.createElement("option");
+  ph.value = "";
+  ph.textContent = list.length ? "— Switch preset —" : "— No presets yet (Save one) —";
+  sel.appendChild(ph);
   for (const pr of list) {
-    const row = document.createElement("div");
-    row.className = "preset-item";
-    const pick = document.createElement("button");
-    pick.type = "button"; pick.className = "pick";
-    pick.textContent = pr.name + (pr.updated ? ` · ${new Date(pr.updated).toLocaleDateString()}` : "");
-    pick.onclick = () => applyPreset(pr);
-    const del = document.createElement("button");
-    del.type = "button"; del.className = "del"; del.textContent = "×";
-    del.onclick = () => {
-      savePresets(loadPresets().filter((x) => x.id !== pr.id));
-    };
-    row.append(pick, del);
-    box.appendChild(row);
+    const opt = document.createElement("option");
+    opt.value = pr.id;
+    opt.textContent = pr.name + (pr.updated ? " · " + new Date(pr.updated).toLocaleDateString() : "");
+    if (activeId && pr.id === activeId) opt.selected = true;
+    sel.appendChild(opt);
   }
+  if (activeId) sel.value = activeId;
+  else if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+}
+function renderPresets() {
+  const list = loadPresets();
+  const box = $("presetList");
+  if (box) {
+    box.innerHTML = "";
+    if (!list.length) {
+      box.innerHTML = '<p class="hint">No saved presets yet. Use <b>Save preset</b> or the Simple bar Save.</p>';
+    } else {
+      for (const pr of list) {
+        const row = document.createElement("div");
+        row.className = "preset-item";
+        const pick = document.createElement("button");
+        pick.type = "button"; pick.className = "pick";
+        if (activePresetId && pr.id === activePresetId) pick.style.outline = "1px solid var(--ui-accent, #3d8bfd)";
+        pick.textContent = pr.name + (pr.updated ? ` · ${new Date(pr.updated).toLocaleDateString()}` : "");
+        pick.onclick = () => applyPreset(pr);
+        const del = document.createElement("button");
+        del.type = "button"; del.className = "del"; del.textContent = "×";
+        del.title = "Delete preset";
+        del.onclick = (ev) => {
+          ev.stopPropagation();
+          if (!confirm("Delete preset “" + pr.name + "”?")) return;
+          const next = loadPresets().filter((x) => x.id !== pr.id);
+          if (activePresetId === pr.id) activePresetId = null;
+          savePresets(next);
+        };
+        row.append(pick, del);
+        box.appendChild(row);
+      }
+    }
+  }
+  fillPresetSelect($("simplePresetSelect"), list, activePresetId);
+  fillPresetSelect($("simplePresetSelectBar"), list, activePresetId);
+}
+function ensureDefaultPresetSeeded() {
+  // Only seed if user has zero presets — never overwrite existing
+  const list = loadPresets();
+  if (list.length) return list;
+  try {
+    const payload = currentPresetPayload("Aventura Civic Gold", { forDownload: false });
+    payload.id = uid();
+    payload.name = "Aventura Civic Gold";
+    payload.logoRef = "embedded";
+    payload.logoDataUrl = null;
+    payload.logoPlayMode = "once";
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([payload]));
+    activePresetId = payload.id;
+    return [payload];
+  } catch (e) {
+    console.warn("seed preset failed", e);
+    return [];
+  }
+}
+function saveCurrentAsPreset(name, { forceNewId = false } = {}) {
+  const n = (name || "").trim() || "Untitled";
+  const list = loadPresets();
+  const payload = currentPresetPayload(n, { forDownload: false });
+  const idx = list.findIndex((x) => x.name === n);
+  if (idx >= 0 && !forceNewId) {
+    payload.id = list[idx].id;
+    list[idx] = payload;
+  } else {
+    // new name or force new
+    if (idx >= 0 && forceNewId) {
+      // rename collision — append number
+      let i = 2, candidate = n + " " + i;
+      while (list.some((x) => x.name === candidate)) { i++; candidate = n + " " + i; }
+      payload.name = candidate;
+    }
+    list.unshift(payload);
+  }
+  activePresetId = payload.id;
+  if ($("presetName")) $("presetName").value = payload.name;
+  savePresets(list);
+  let msg = "Saved preset: " + payload.name;
+  if (payload.logoOmitted) msg += " (theme/people only — logo sequence not stored; re-load sequence after switch)";
+  else if (payload.logoRef === "embedded" || payload.logoRef === "hold") msg += " (built-in logo)";
+  if ($("statusPill")) $("statusPill").textContent = msg;
+  return payload;
 }
 
 function logoRefForStorage(url) {
@@ -1830,28 +3063,53 @@ function currentPresetPayload(name, { forDownload = false } = {}) {
     logoDataUrl: logo.logoDataUrl,
     logoOmitted: !!logo.logoOmitted,
     logoPlayMode: (typeof getLogoPlayMode === "function" ? getLogoPlayMode() : "once"),
+    styleId: (typeof activeStyleId !== "undefined" ? activeStyleId : "civic"),
     people: structuredClone(people),
     selectedId,
   };
 }
 
 function applyPreset(pr) {
-  if (pr.sourceUrl) $("sourceUrl").value = pr.sourceUrl;
-  if (pr.theme) applyTheme(pr.theme);
-  if ($("logoPlayMode")) $("logoPlayMode").value = pr.logoPlayMode || "once";
-  if (typeof setLogo === "function") setLogo(resolveLogoFromPreset(pr));
-  else if (pr.logoPlayMode && typeof applyLogoPlayMode === "function") applyLogoPlayMode();
-  if (pr.logoOmitted) {
-    $("statusPill").textContent = "Preset loaded (custom logo was too large for browser storage — re-import logo)";
+  if (!pr || typeof pr !== "object") {
+    if ($("statusPill")) $("statusPill").textContent = "Invalid preset";
+    return;
   }
-  if (pr.people?.length) {
-    people = normalizePeople(structuredClone(pr.people));
-    selectedId = pr.selectedId || people[0].id;
+  try {
+    if (pr.id) activePresetId = pr.id;
+    if (pr.name && $("presetName")) $("presetName").value = pr.name;
+    if (pr.sourceUrl && $("sourceUrl")) $("sourceUrl").value = pr.sourceUrl;
+    if (pr.styleId && typeof applyStyleLibrary === "function") {
+      applyStyleLibrary(pr.styleId, { play: false });
+    }
+    if (pr.theme) applyTheme(pr.theme);
+    if ($("logoPlayMode")) $("logoPlayMode").value = pr.logoPlayMode || "once";
+    // Logo: only replace if we have a resolvable ref — never blank the logo
+    try {
+      const logoUrl = resolveLogoFromPreset(pr);
+      if (logoUrl && typeof setLogo === "function") setLogo(logoUrl);
+      else if (pr.logoPlayMode && typeof applyLogoPlayMode === "function") applyLogoPlayMode();
+    } catch (logoErr) {
+      console.warn("preset logo restore failed", logoErr);
+      if (typeof setLogo === "function" && typeof EMBEDDED_LOGO !== "undefined") setLogo(EMBEDDED_LOGO);
+    }
+    if (pr.people?.length) {
+      people = normalizePeople(structuredClone(pr.people));
+      selectedId = pr.selectedId || people[0]?.id || null;
+    }
+    renderList();
+    if (typeof renderPerson === "function") renderPerson();
+    playIn();
+    persistState();
+    renderPresets(); // refresh active highlight
+    let msg = "Loaded: " + (pr.name || "preset");
+    if (pr.logoOmitted || pr.logoRef === "inline-too-large") {
+      msg += " · re-load logo/sequence (not stored)";
+    }
+    if ($("statusPill")) $("statusPill").textContent = msg;
+  } catch (e) {
+    console.error("applyPreset", e);
+    if ($("statusPill")) $("statusPill").textContent = "Preset load failed: " + (e.message || e);
   }
-  renderList();
-  playIn();
-  persistState();
-  $("statusPill").textContent = "Loaded: " + pr.name;
 }
 
 function persistState() {
@@ -1878,7 +3136,21 @@ applyTheme(themeFromUI());
 setLogo(EMBEDDED_LOGO);
 renderList();
 renderPerson();
+try { ensureDefaultPresetSeeded(); } catch (_) {}
 renderPresets();
+try {
+  let sid = "civic";
+  try { sid = localStorage.getItem("l3studio.styleId") || "civic"; } catch (_) {}
+  try {
+    const sp = new URLSearchParams(location.search || "");
+    if (sp.get("style")) sid = sp.get("style");
+    if (location.hash && location.hash.indexOf("style=") >= 0) {
+      sid = decodeURIComponent(location.hash.split("style=")[1].split("&")[0]);
+    }
+  } catch (_) {}
+  renderStyleLibrary();
+  applyStyleLibrary(sid, { play: true });
+} catch (e) { console.warn("style lib init", e); }
 
 $("btnPlay").onclick = () => playIn();
 $("btnReplayLogo").onclick = () => replayLogo();
@@ -1886,6 +3158,33 @@ $("btnChecker").onclick = () => {
   solidStage = !solidStage;
   $("stage").classList.toggle("solid", solidStage);
 };
+/** Target package scale on 9:16 (uniform; may go lower to fit stage). */
+const PORTRAIT_PKG_SCALE = 0.70;
+
+/** Uniform 9:16 package scale — whole .l3, never per-line shrink / ellipsis. */
+function applyPortraitPackageScale() {
+  const stage = $("stage");
+  const l3 = $("l3");
+  if (!stage || !l3) return;
+  if (!stage.classList.contains("portrait")) {
+    stage.style.removeProperty("--l3-pkg-scale");
+    return;
+  }
+  // Measure natural package size (scale=1), then fit to ~90% stage width
+  const prev = l3.style.transform;
+  l3.style.transform = "scale(1)";
+  void l3.offsetWidth;
+  const needW = Math.max(l3.scrollWidth, l3.getBoundingClientRect().width) || 400;
+  const needH = Math.max(l3.scrollHeight, l3.getBoundingClientRect().height) || 120;
+  l3.style.transform = prev;
+  const availW = stage.clientWidth * 0.90;
+  const availH = stage.clientHeight * 0.28; // lower-third band
+  const target = (typeof PORTRAIT_PKG_SCALE === "number" ? PORTRAIT_PKG_SCALE : 0.70);
+  const s = Math.min(target, availW / needW, availH / needH);
+  const clamped = Math.max(0.48, Math.min(target, s));
+  stage.style.setProperty("--l3-pkg-scale", clamped.toFixed(3));
+}
+
 document.querySelectorAll("[data-aspect]").forEach((b) => {
     b.onclick = () => {
       const port = b.dataset.aspect === "9x16";
@@ -1894,9 +3193,12 @@ document.querySelectorAll("[data-aspect]").forEach((b) => {
         if (port) { $("exportW").value = 1080; $("exportH").value = 1920; }
         else { $("exportW").value = 1920; $("exportH").value = 1080; }
       }
-      // Re-fit type after layout settles
-      requestAnimationFrame(() => { fitText(); });
-      if ($("statusPill")) $("statusPill").textContent = port ? "9:16 · L3 scaled to fit" : "16:9";
+      requestAnimationFrame(() => {
+        fitText();
+        applyPortraitPackageScale();
+        if (typeof playIn === "function") playIn();
+      });
+      if ($("statusPill")) $("statusPill").textContent = port ? "9:16 · uniform scale · full text" : "16:9";
     };
   });
 
@@ -1996,34 +3298,20 @@ $("btnCycle").onclick = () => {
 };
 
 $("btnSavePreset").onclick = () => {
-  const name = $("presetName").value.trim() || "Untitled";
-  const list = loadPresets();
-  const payload = currentPresetPayload(name, { forDownload: false });
-  const idx = list.findIndex((x) => x.name === name);
-  if (idx >= 0) payload.id = list[idx].id;
-  if (idx >= 0) list[idx] = payload; else list.unshift(payload);
   try {
-    // prune oldest if needed
-    let ok = false;
-    let working = list.slice();
-    while (working.length && !ok) {
+    const name = ($("presetName") && $("presetName").value.trim()) || "Untitled";
+    const payload = saveCurrentAsPreset(name);
+    if (payload.logoOmitted) {
+      // also offer JSON backup for full logo
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(working));
-        ok = true;
-      } catch (e) {
-        working.pop(); // drop oldest
-      }
+        const full = currentPresetPayload(name, { forDownload: true });
+        // only auto-download if logo is huge custom
+      } catch (_) {}
     }
-    if (!ok) throw new Error("quota");
-    renderPresets();
-    let msg = "Saved preset: " + name;
-    if (payload.logoOmitted) msg += " (theme/people only — custom logo not stored; use Download JSON for full backup)";
-    else if (payload.logoRef === "embedded" || payload.logoRef === "hold") msg += " (uses built-in logo)";
-    $("statusPill").textContent = msg;
   } catch (err) {
     $("statusPill").textContent = "Storage full — use Download JSON for a full backup";
-    // still offer file download automatically
     try {
+      const name = ($("presetName") && $("presetName").value.trim()) || "preset";
       const full = currentPresetPayload(name, { forDownload: true });
       const blob = new Blob([JSON.stringify(full, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
@@ -2048,7 +3336,21 @@ $("btnExportPreset").onclick = () => {
 
 $("filePreset").onchange = async (e) => {
   const f = e.target.files?.[0]; if (!f) return;
-  applyPreset(JSON.parse(await f.text()));
+  try {
+    const pr = JSON.parse(await f.text());
+    if (!pr.id) pr.id = uid();
+    // import into list without deleting others
+    const list = loadPresets();
+    const idx = list.findIndex((x) => x.id === pr.id || x.name === pr.name);
+    if (idx >= 0) { pr.id = list[idx].id; list[idx] = { ...list[idx], ...pr, updated: Date.now() }; }
+    else list.unshift({ ...pr, updated: Date.now() });
+    activePresetId = pr.id;
+    savePresets(list);
+    applyPreset(pr);
+  } catch (err) {
+    alert("Could not import preset: " + (err.message || err));
+  }
+  e.target.value = "";
 };
 
 $("btnExportHtml").onclick = () => {
@@ -2155,6 +3457,213 @@ function measureTextWidth(ctx, text, font) {
   return ctx.measureText(text).width;
 }
 
+
+
+/** Dual title plate — full on-air title (not seat-only / short labels). Uppercase for package. */
+function dualTitleShort(p) {
+  if (!p) return "";
+  // Explicit dual override only when set
+  if (p.dualTitle) return String(p.dualTitle).toUpperCase();
+  const full = (typeof displayTitle === "function" ? displayTitle(p) : (p.title || p.baseTitle || ""));
+  return String(full || "")
+    .replace(/\s*[·|]\s*/g, " · ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
+function dualNameText(p) {
+  const n = (typeof displayNameOf === "function" ? displayNameOf(p) : (p && p.name)) || "";
+  // keep Esq. style as ", ESQ." in caps
+  return String(n)
+    .replace(/,?\s*Esq\.?/gi, ", ESQ.")
+    .replace(/,?\s*MMC\.?/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
+function isDualStyle() {
+  return (typeof activeStyleId !== "undefined" && activeStyleId === "aventura-dual")
+    || ($("l3") && $("l3").dataset.style === "aventura-dual")
+    || (($("animStyle") && $("animStyle").value) === "dualStack");
+}
+
+function dualPalette() {
+  const st = (typeof STYLE_LIBRARY !== "undefined" && STYLE_LIBRARY["aventura-dual"]) || null;
+  const d = (st && st.dual) || {};
+  return {
+    nameBg: d.nameBg || "#0B2545",
+    titleBg: d.titleBg || "#4DA8E8",
+    nameFg: d.nameFg || "#FFFFFF",
+    titleFg: d.titleFg || "#0B2545",
+  };
+}
+
+/** Draw Aventura dual-bar package — circular boolean notch under seal (matches Claude broadcast artifact). */
+function drawDualPackage(ctx, {
+  person, logoImg, logoX, logoY, logoSize, s,
+  nameText, titleText, nameFontF, titleFontF, nameSize, titleSize,
+  nameWipe = 1, titleWipe = 1, logoO = 1, originX, originY,
+}) {
+  // Pixel tokens from AE package (scaled by s = frameScale relative to 1920)
+  const D = (typeof STYLE_LIBRARY !== "undefined" && STYLE_LIBRARY["aventura-dual"] && STYLE_LIBRARY["aventura-dual"].dual) || {};
+  const pal = {
+    nameBg: D.nameBg || "#0F2549",
+    titleBg: D.titleBg || "#2EA3E8",
+    nameFg: D.nameFg || "#FFFFFF",
+    titleFg: D.titleFg || "#06131F",
+  };
+  const seal = logoSize; // already scaled
+  const badgeOverlap = Math.round((D.badgeOverlap || 55) * s);
+  const nameBarH = Math.round((D.nameBarH || 68) * s);
+  const titleBarH = Math.round((D.titleBarH || 38) * s);
+  const gapBarY = Math.round((D.gapBarY || 6) * s);
+  const cornerR = Math.round((D.cornerR || 10) * s);
+  const cutAngle = (D.cutAngleDeg != null ? D.cutAngleDeg : 12) * Math.PI / 180;
+  const padLN = Math.round((D.padLeftName || 72) * s);
+  const padRN = Math.round((D.padRightName || 34) * s);
+  const padLT = Math.round((D.padLeftTitle || 68) * s);
+  const padRT = Math.round((D.padRightTitle || 28) * s);
+  const nameFs = Math.round((D.nameFontSize || 48) * s);
+  const titleFs = Math.round((D.titleFontSize || 26) * s);
+  const nameTrack = D.nameTracking != null ? D.nameTracking : 0.018;
+  const titleTrack = D.titleTracking != null ? D.titleTracking : 0.13;
+  const nameFont = "400 " + nameFs + "px " + (D.nameFont || '"Bebas Neue", Oswald, Impact, sans-serif');
+  const titleFont = "700 " + titleFs + "px " + (D.titleFont || '"Montserrat", "Helvetica Neue", Arial, sans-serif');
+
+  const logoCx = logoX + seal / 2;
+  const logoCy = logoY + seal / 2;
+  const notchR = seal / 2 + Math.max(1.5, 2 * s);
+  const stackH = nameBarH + gapBarY + titleBarH;
+  const stackY = logoCy - stackH / 2;
+  // bar left edge so seal overlaps by badgeOverlap
+  const barsX = logoX + seal - badgeOverlap;
+
+  // Measure with package fonts
+  function measureTracked(text, font, trackEm, fs) {
+    ctx.font = font;
+    if (typeof measureTrackedTextWidth === "function") {
+      try { return measureTrackedTextWidth(ctx, text, font, trackEm, fs); } catch (_) {}
+    }
+    // approximate tracking
+    const base = ctx.measureText(text).width;
+    const extra = Math.max(0, text.length - 1) * fs * trackEm;
+    return base + extra;
+  }
+  const nameW = measureTracked(nameText, nameFont, nameTrack, nameFs);
+  const titleW = measureTracked(titleText, titleFont, titleTrack, titleFs);
+  // Text clears seal edge: bars start under seal by badgeOverlap; padLeft is from bar left
+  const textLeftName = barsX + padLN;
+  const textLeftTitle = barsX + padLT;
+  const nameBarW2 = Math.ceil(padLN + nameW + padRN);
+  const titleBarW2 = Math.ceil(padLT + titleW + padRT);
+
+  function slantFor(h) { return h * Math.tan(cutAngle); }
+
+  /** Trapezoid: vertical left, 12° cut on trailing edge, right corners rounded conceptually via fill */
+  function trapPath(x, y, w, h) {
+    const slant = slantFor(h);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w - slant, y + h);
+    ctx.lineTo(x, y + h);
+    ctx.closePath();
+  }
+
+  function fillNotchedTrap(x, y, w, h, fill, wipe) {
+    if (wipe <= 0.001) return;
+    ctx.save();
+    const ww = Math.max(1, w * Math.max(0, Math.min(1, wipe)));
+    ctx.beginPath();
+    ctx.rect(x - 2, y - 2, ww + 4, h + 4);
+    ctx.clip();
+
+    // shadow
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.45)";
+    ctx.shadowBlur = 18 * s;
+    ctx.shadowOffsetY = 6 * s;
+    trapPath(x, y, w, h);
+    ctx.arc(logoCx, logoCy, notchR, 0, Math.PI * 2, true);
+    ctx.fillStyle = fill;
+    ctx.fill("evenodd");
+    ctx.restore();
+
+    // crisp
+    trapPath(x, y, w, h);
+    ctx.arc(logoCx, logoCy, notchR, 0, Math.PI * 2, true);
+    ctx.fillStyle = fill;
+    ctx.fill("evenodd");
+
+    // soft round the sharp trailing corners with a small cap (visual polish)
+    ctx.restore();
+  }
+
+  // NAME BAR
+  fillNotchedTrap(barsX, stackY, nameBarW2, nameBarH, pal.nameBg, nameWipe);
+  if (nameWipe > 0.12) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(barsX, stackY, nameBarW2 * nameWipe + 2, nameBarH);
+    ctx.clip();
+    ctx.beginPath();
+    ctx.rect(barsX - 2, stackY - 2, nameBarW2 + 8, nameBarH + 4);
+    ctx.arc(logoCx, logoCy, notchR + 1, 0, Math.PI * 2, true);
+    ctx.clip("evenodd");
+    ctx.font = nameFont;
+    ctx.fillStyle = pal.nameFg;
+    ctx.textBaseline = "middle";
+    const ny = stackY + nameBarH / 2;
+    if (typeof fillTrackedText === "function") {
+      fillTrackedText(ctx, nameText, textLeftName, ny + nameFs * 0.28, nameFont, nameTrack, nameFs, pal.nameFg);
+    } else {
+      ctx.fillText(nameText, textLeftName, ny);
+    }
+    ctx.restore();
+  }
+
+  // TITLE BAR
+  const ty = stackY + nameBarH + gapBarY;
+  fillNotchedTrap(barsX, ty, titleBarW2, titleBarH, pal.titleBg, titleWipe);
+  if (titleWipe > 0.12) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(barsX, ty, titleBarW2 * titleWipe + 2, titleBarH);
+    ctx.clip();
+    ctx.beginPath();
+    ctx.rect(barsX - 2, ty - 2, titleBarW2 + 8, titleBarH + 4);
+    ctx.arc(logoCx, logoCy, notchR + 1, 0, Math.PI * 2, true);
+    ctx.clip("evenodd");
+    ctx.font = titleFont;
+    ctx.fillStyle = pal.titleFg;
+    ctx.textBaseline = "middle";
+    const tty = ty + titleBarH / 2;
+    if (typeof fillTrackedText === "function") {
+      fillTrackedText(ctx, titleText, textLeftTitle, tty + titleFs * 0.28, titleFont, titleTrack, titleFs, pal.titleFg);
+    } else {
+      ctx.fillText(titleText, textLeftTitle, tty);
+    }
+    ctx.restore();
+  }
+
+  // SEAL on top — no glow rings
+  if (logoImg && logoO > 0.001) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, logoO));
+    ctx.beginPath();
+    ctx.arc(logoCx, logoCy, seal / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(logoImg, logoX, logoY, seal, seal);
+    ctx.restore();
+  }
+
+  return { nameBarW: nameBarW2, titleBarW: titleBarW2, stackH, barsX, notchR };
+}
+
+
 async function renderPersonToCanvas(person, opts = {}) {
   const theme = themeFromUI();
   const fmt = opts.format || $("exportFormat")?.value || "l3-alpha";
@@ -2224,11 +3733,33 @@ async function renderPersonToCanvas(person, opts = {}) {
     ? (canvas.height - logoSize) / 2
     : originY + (blockH - logoSize) / 2;
   const logoX = originX;
+  const nameText = (typeof displayNameOf === "function" ? displayNameOf(person) : person.name) || "";
+  const titleText = (typeof displayTitle === "function" ? displayTitle(person) : person.title) || "";
+  const nDraw = isDualStyle() ? dualNameText(person) : nameText;
+  const tDraw = isDualStyle() ? dualTitleShort(person) : titleText;
+
+  if (isDualStyle()) {
+    const D = (STYLE_LIBRARY["aventura-dual"] && STYLE_LIBRARY["aventura-dual"].dual) || {};
+    const dLogo = Math.round((D.seal || 148) * s);
+    const dLogoY = (fmt === "l3-alpha")
+      ? (canvas.height - dLogo) / 2
+      : originY + (Math.max(blockH, dLogo) - dLogo) / 2;
+    drawDualPackage(ctx, {
+      person, logoImg, logoX: originX, logoY: dLogoY, logoSize: dLogo, s,
+      nameText: nDraw, titleText: tDraw,
+      nameFontF: null, titleFontF: null,
+      nameSize: Math.round((D.nameFontSize || 48) * s),
+      titleSize: Math.round((D.titleFontSize || 26) * s),
+      nameWipe: 1, titleWipe: 1, logoO: 1, originX, originY,
+    });
+    return canvas;
+  }
+
   if (logoImg) {
     ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
   }
 
-  // Card
+  // Card (Civic single-panel)
   const cardX = originX + logoSize + gap;
   const cardY = (fmt === "l3-alpha")
     ? (canvas.height - cardH) / 2
@@ -2252,13 +3783,9 @@ async function renderPersonToCanvas(person, opts = {}) {
 
   // Accent bar
   ctx.fillStyle = theme.accent;
-  roundRectPath(ctx, cardX, cardY, accentW, cardH, Math.min(radius, accentW));
-  // redraw left accent as rect for crispness
   ctx.beginPath();
   ctx.rect(cardX, cardY, accentW, cardH);
-  ctx.fillStyle = theme.accent;
   ctx.fill();
-  // re-mask rounded left by clipping would be complex; simple rect accent is fine
 
   // Text
   ctx.textBaseline = "alphabetic";
@@ -2266,11 +3793,11 @@ async function renderPersonToCanvas(person, opts = {}) {
   const _nTrack = (typeof nameTrackEm !== "undefined") ? nameTrackEm : (parseFloat(theme.nameTracking) || 0.04);
   const _tTrack = (typeof titleTrackEm !== "undefined") ? titleTrackEm : (parseFloat(theme.titleTracking) || 0.12);
   if (typeof fillTrackedText === "function") {
-    fillTrackedText(ctx, (typeof displayNameOf==='function'?displayNameOf(person):person.name), cardX + padX, nameBaseY, nameFontF, _nTrack, nameSize, theme.nameColor);
-    fillTrackedText(ctx, displayTitle(person), cardX + padX, nameBaseY + 6 * s + titleSize, titleFontF, _tTrack, titleSize, theme.titleColor);
+    fillTrackedText(ctx, nDraw, cardX + padX, nameBaseY, nameFontF, _nTrack, nameSize, theme.nameColor);
+    fillTrackedText(ctx, tDraw, cardX + padX, nameBaseY + 6 * s + titleSize, titleFontF, _tTrack, titleSize, theme.titleColor);
   } else {
-    ctx.fillStyle = theme.nameColor; ctx.font = nameFontF; ctx.fillText((typeof displayNameOf==='function'?displayNameOf(person):person.name), cardX + padX, nameBaseY);
-    ctx.fillStyle = theme.titleColor; ctx.font = titleFontF; ctx.fillText(displayTitle(person), cardX + padX, nameBaseY + 6 * s + titleSize);
+    ctx.fillStyle = theme.nameColor; ctx.font = nameFontF; ctx.fillText(nDraw, cardX + padX, nameBaseY);
+    ctx.fillStyle = theme.titleColor; ctx.font = titleFontF; ctx.fillText(tDraw, cardX + padX, nameBaseY + 6 * s + titleSize);
   }
 
   return canvas;
@@ -2466,6 +3993,7 @@ const ANIM_STYLES = {
   logoLead:  { label: "Logo lead",          inOf: {x:0,y:20,s:1,o:0,blur:0}, outOf: {x:0,y:12,s:1,o:0,blur:0}, stagger: true },
   dropSoft:  { label: "Soft drop",          inOf: {x:0,y:-22,s:1,o:0,blur:0}, outOf: {x:0,y:10,s:1,o:0,blur:0}, overshoot: true },
   none:      { label: "None",               inOf: {x:0,y:0,s:1,o:0,blur:0}, outOf: {x:0,y:0,s:1,o:0,blur:0} },
+  dualStack: { label: "Dual stack wipe",    inOf: {x:0,y:0,s:1,o:0,blur:0,wipe:0}, outOf: {x:0,y:0,s:1,o:0,blur:0,wipe:0}, wipeOut: true, dual: true },
 };
 
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
@@ -2511,6 +4039,7 @@ function poseAtTime(t, timing) {
       o: st.inOf.o ?? 0, blur: st.inOf.blur || 0,
       wipe: st.inOf.wipe != null ? st.inOf.wipe : 0,
       logoO: 0, textO: 0, logoX: st.inOf.x, textX: st.inOf.x,
+      nameWipe: 0, titleWipe: 0,
     };
   }
 
@@ -2541,11 +4070,29 @@ function poseAtTime(t, timing) {
       base.o = Math.max(base.logoO, base.textO);
       base.blur = (a.blur || 0) * (1 - teu);
     }
+    if (st.dual || timing.style === "dualStack") {
+      // Logo first, name bar wipe, title bar delayed wipe (matches Aventura package)
+      const lu = Math.min(1, t / (tIn * 0.35));
+      const nu = Math.max(0, Math.min(1, (t - tIn * 0.08) / (tIn * 0.55)));
+      const tu = Math.max(0, Math.min(1, (t - tIn * 0.28) / (tIn * 0.55)));
+      base.logoO = easeOutCubic(lu);
+      base.nameWipe = easeOutCubic(nu);
+      base.titleWipe = easeOutCubic(tu);
+      base.textO = Math.max(base.nameWipe, base.titleWipe);
+      base.wipe = base.nameWipe;
+      base.o = Math.max(base.logoO, base.textO);
+      base.x = 0; base.y = 0; base.s = 1;
+    }
     return base;
   }
 
   // HOLD
-  if (t < tHoldEnd) return { ...rest };
+  if (t < tHoldEnd) {
+    if (st.dual || timing.style === "dualStack") {
+      return { ...rest, nameWipe: 1, titleWipe: 1, logoO: 1, textO: 1, wipe: 1 };
+    }
+    return { ...rest };
+  }
 
   // OUT
   if (t < tOutEnd) {
@@ -2560,6 +4107,8 @@ function poseAtTime(t, timing) {
       blur: (a.blur || 0) * u,
       wipe: st.wipeOut ? (1 - u) : 1,
       logoO: 1 - u, textO: 1 - u, logoX: a.x * u, textX: a.x * u,
+      nameWipe: st.dual ? (1 - u) : 1,
+      titleWipe: st.dual ? Math.max(0, 1 - u * 1.15) : 1,
     };
     if (st.stagger) {
       const tu = Math.min(1, u / 0.55);
@@ -2642,22 +4191,27 @@ async function previewInOut() {
  * pose overrides default rest pose for motion blur subframes.
  */
 
-/* ── Frame-aware L3 layout (16:9 + 9:16 safe) ── */
+/* ── Frame-aware L3 layout (16:9 + 9:16 uniform package scale) ── */
 function frameLayout(W, H, theme, userScale) {
   userScale = userScale != null ? userScale : (+($("exportScale")?.value || 1));
-  const s = Math.min(W / 1920, H / 1080) * userScale;
   const isPortrait = H > W * 1.15;
+  // Landscape: scale from 1920 ref. Portrait: scale from 1080 width so package reads clean on 9:16,
+  // then apply one uniform PORTRAIT_PKG_SCALE (same factor as stage CSS).
+  let s = isPortrait
+    ? (W / 1080) * PORTRAIT_PKG_SCALE * userScale
+    : (W / 1920) * userScale;
 
-  let left = parseFloat(theme.l3Left || 72) * (W / 1920);
-  let bottom = parseFloat(theme.l3Bottom || 80) * (H / 1080);
-  let rightPad = Math.max(24 * (W / 1920), W * 0.04);
+  let left = isPortrait
+    ? Math.max(W * 0.055, 24 * (W / 1080))
+    : parseFloat(theme.l3Left || 72) * (W / 1920);
+  let bottom = isPortrait
+    ? Math.max(H * 0.055, 48 * (H / 1920))
+    : parseFloat(theme.l3Bottom || 80) * (H / 1080);
+  let rightPad = isPortrait
+    ? Math.max(W * 0.05, 20)
+    : Math.max(24 * (W / 1920), W * 0.04);
 
-  if (isPortrait) {
-    left = Math.max(W * 0.05, 20);
-    rightPad = Math.max(W * 0.05, 20);
-    bottom = Math.max(H * 0.055, 40);
-  }
-
+  // All dimensions from theme × single s — no per-field portrait clamps
   let logoSize = parseFloat(theme.logoSize || 92) * s;
   let nameSize = parseFloat(theme.nameSize || 40) * s;
   let titleSize = parseFloat(theme.titleSize || 18) * s;
@@ -2667,36 +4221,23 @@ function frameLayout(W, H, theme, userScale) {
   let radius = parseFloat(theme.radius || 6) * s;
   let accentW = parseFloat(theme.accentW || 5) * s;
 
-  if (isPortrait) {
-    logoSize = Math.min(logoSize, W * 0.15);
-    nameSize = Math.min(nameSize, W * 0.052);
-    titleSize = Math.min(titleSize, W * 0.030);
-    padX = Math.min(padX, W * 0.032);
-    padY = Math.min(padY, H * 0.011);
-    gap = Math.min(gap, W * 0.022);
-    accentW = Math.min(accentW, 4);
-  }
-
   const maxBlockW = W - left - rightPad;
   const maxTextW = Math.max(80, maxBlockW - logoSize - gap - padX * 2 - accentW);
 
   return {
     s, isPortrait, left, bottom, rightPad, logoSize, nameSize, titleSize,
-    padX, padY, gap, radius, accentW, maxBlockW, maxTextW,
+    padX, padY, gap, radius, accentW, maxBlockW, maxTextW, pkgScale: isPortrait ? PORTRAIT_PKG_SCALE : 1,
   };
 }
 
 function shrinkTypeToWidth(ctx, person, theme, L) {
+  // Keep full designed type — never shrink to force ellipsis. Package already scaled via L.s.
   let nameSize = L.nameSize;
   let titleSize = L.titleSize;
   const nameWgt = theme.nameWeight || 600;
   const titleWgt = theme.titleWeight || 500;
   let nt = parseFloat(theme.nameTracking) || 0.04;
   let tt = parseFloat(theme.titleTracking) || 0.12;
-  if (L.isPortrait) {
-    nt = Math.min(nt, 0.028);
-    tt = Math.min(tt, 0.07);
-  }
   const title = (typeof displayTitle === "function") ? displayTitle(person) : (person.title || "");
   const mtw = (text, font, track, size) => {
     if (typeof measureTrackedWidth === "function") {
@@ -2706,24 +4247,14 @@ function shrinkTypeToWidth(ctx, person, theme, L) {
     return ctx.measureText(text || "").width;
   };
 
-  let guard = 80;
-  const onAirName = (typeof displayNameOf === 'function' ? displayNameOf(person) : person.name);
-  while (mtw(onAirName, `${nameWgt} ${nameSize}px ${theme.fontName}`, nt, nameSize) > L.maxTextW && nameSize > 11 && guard--) {
-    nameSize -= 0.5;
-  }
-  guard = 80;
-  while (mtw(title, `${titleWgt} ${titleSize}px ${theme.fontTitle}`, tt, titleSize) > L.maxTextW && titleSize > 9 && guard--) {
-    titleSize -= 0.5;
-  }
-
+  const onAirName = (typeof displayNameOf === "function" ? displayNameOf(person) : person.name);
+  // Full type at designed size — no shrink, no truncation. Portrait already scaled via L.s.
   const nameFontF = `${nameWgt} ${nameSize}px ${theme.fontName}`;
   const titleFontF = `${titleWgt} ${titleSize}px ${theme.fontTitle}`;
   const nameW = mtw(onAirName, nameFontF, nt, nameSize);
   const titleW = mtw(title, titleFontF, tt, titleSize);
   const textW = Math.max(nameW, titleW);
   let cardW = Math.ceil(textW + L.padX * 2 + L.accentW);
-  const maxCard = Math.max(60, L.maxBlockW - L.logoSize - L.gap);
-  cardW = Math.min(cardW, maxCard);
   const cardH = L.padY * 2 + nameSize * 1.15 + Math.max(4, 6 * L.s) + titleSize * 1.3;
   const blockH = Math.max(L.logoSize, cardH);
   const blockW = L.logoSize + L.gap + cardW;
@@ -2770,6 +4301,33 @@ async function drawAnimatedFrame(ctx, W, H, person, logoImg, theme, timing, t, p
   // Optional directional blur approximation via extra alpha (real MB is multi-sample outside)
   const logoX = originX + (p.logoX || 0) * s;
   const logoY = originY + (blockH - logoSize) / 2;
+  const nameText0 = (typeof displayNameOf === "function" ? displayNameOf(person) : person.name) || "";
+  const titleText0 = (typeof displayTitle === "function" ? displayTitle(person) : person.title) || "";
+
+  if (isDualStyle() || timing.style === "dualStack") {
+    const D = (STYLE_LIBRARY["aventura-dual"] && STYLE_LIBRARY["aventura-dual"].dual) || {};
+    const dSeal = Math.round((D.seal || 148) * s);
+    const dLogoY2 = originY + (Math.max(blockH, dSeal) - dSeal) / 2;
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.o));
+    drawDualPackage(ctx, {
+      person, logoImg,
+      logoX: originX + (p.logoX || 0) * s,
+      logoY: dLogoY2,
+      logoSize: dSeal, s,
+      nameText: dualNameText(person),
+      titleText: dualTitleShort(person),
+      nameFontF: null, titleFontF: null,
+      nameSize: Math.round((D.nameFontSize || 48) * s),
+      titleSize: Math.round((D.titleFontSize || 26) * s),
+      nameWipe: p.nameWipe != null ? p.nameWipe : (p.wipe != null ? p.wipe : p.textO),
+      titleWipe: p.titleWipe != null ? p.titleWipe : (p.wipe != null ? p.wipe : p.textO),
+      logoO: p.logoO != null ? p.logoO : 1,
+      originX, originY,
+    });
+    ctx.restore();
+    return;
+  }
+
   if (logoImg && p.logoO > 0.001) {
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, p.o * p.logoO));
@@ -2815,11 +4373,11 @@ async function drawAnimatedFrame(ctx, W, H, person, logoImg, theme, timing, t, p
     const _nTrack = parseFloat(theme.nameTracking) || 0.04;
     const _tTrack = parseFloat(theme.titleTracking) || 0.12;
     if (typeof fillTrackedText === "function") {
-      fillTrackedText(ctx, (typeof displayNameOf==='function'?displayNameOf(person):person.name), cardX + padX, nameBaseY, nameFontF, _nTrack, nameSize, theme.nameColor);
-      fillTrackedText(ctx, displayTitle(person), cardX + padX, nameBaseY + 6 * s + titleSize, titleFontF, _tTrack, titleSize, theme.titleColor);
+      fillTrackedText(ctx, nameText0, cardX + padX, nameBaseY, nameFontF, _nTrack, nameSize, theme.nameColor);
+      fillTrackedText(ctx, titleText0, cardX + padX, nameBaseY + 6 * s + titleSize, titleFontF, _tTrack, titleSize, theme.titleColor);
     } else {
-      ctx.fillStyle = theme.nameColor; ctx.font = nameFontF; ctx.fillText((typeof displayNameOf==='function'?displayNameOf(person):person.name), cardX + padX, nameBaseY);
-      ctx.fillStyle = theme.titleColor; ctx.font = titleFontF; ctx.fillText(displayTitle(person), cardX + padX, nameBaseY + 6 * s + titleSize);
+      ctx.fillStyle = theme.nameColor; ctx.font = nameFontF; ctx.fillText(nameText0, cardX + padX, nameBaseY);
+      ctx.fillStyle = theme.titleColor; ctx.font = titleFontF; ctx.fillText(titleText0, cardX + padX, nameBaseY + 6 * s + titleSize);
     }
     ctx.restore();
   }
@@ -3007,21 +4565,30 @@ async function renderAllAnimated() {
   clearExportLog();
   const timing = animTiming();
   if (timing.deliver === "still") {
-    return generateBatch({ downloadZip: true });
+    const batch = await generateBatch({ downloadZip: true });
+    if (typeof L3Studio !== "undefined" && L3Studio._recordJob) {
+      L3Studio._recordJob({ deliver: "still", titles: (people || []).map((p) => ({ id: p.id, name: p.name, title: displayTitle ? displayTitle(p) : p.title })) });
+    }
+    return batch;
   }
   const allFiles = [];
+  const titleRecords = [];
   const prog = $("exportProg");
   if (prog) { prog.hidden = false; prog.value = 0; prog.max = people.length; }
   for (let i = 0; i < people.length; i++) {
     const p = people[i];
     selectedId = p.id;
     renderList();
-    $("nameEl").textContent = p.name;
-    $("titleEl").textContent = p.title;
+    $("nameEl").textContent = (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
+    $("titleEl").textContent = (typeof displayTitle === "function" ? displayTitle(p) : p.title);
     logExport(`—— ${i + 1}/${people.length}: ${p.name}`);
     const res = await renderAnimatedTitle(p, { download: false });
     if (res?.type === "webm" && res.blob) {
       allFiles.push({ name: res.base + ".webm", blob: res.blob });
+      titleRecords.push({
+        id: p.id, name: p.name, title: p.title, base: res.base,
+        zipName: res.base + ".webm", type: "webm", frameCount: 1,
+      });
     } else if (res?.type === "pngseq" && res.frames) {
       res.frames.forEach((blob, fi) => {
         allFiles.push({
@@ -3029,18 +4596,40 @@ async function renderAllAnimated() {
           blob,
         });
       });
+      titleRecords.push({
+        id: p.id, name: p.name, title: p.title, base: res.base,
+        zipName: `${res.base}_pngseq.zip`,
+        sequencePattern: `${res.base}/${res.base}_#####.png`,
+        type: "pngseq",
+        frameCount: res.frames.length,
+      });
     }
     if (prog) prog.value = i + 1;
   }
+  let zipName = null;
   if (allFiles.length) {
     logExport(`Zipping ${allFiles.length} files…`);
     const zip = await blobsToZip(allFiles);
     const zname = `L3_anim_batch_${slugify($("presetName")?.value || "aventura")}_${timing.style}.zip`;
+    zipName = zname;
     downloadBlob(zip, zname);
     logExport(`✓ ${zname}`);
     $("statusPill").textContent = "Batch animation done";
   }
+  if (typeof L3Studio !== "undefined" && L3Studio._recordJob) {
+    L3Studio._recordJob({
+      deliver: timing.deliver,
+      fps: timing.fps,
+      mbSamples: timing.mb,
+      width: +($("exportW")?.value || 1920),
+      height: +($("exportH")?.value || 1080),
+      presetName: ($("presetName") && $("presetName").value) || "",
+      titles: titleRecords,
+      zipName: zipName,
+    });
+  }
   if (prog) setTimeout(() => { prog.hidden = true; }, 800);
+  return { zipName, titles: titleRecords, fileCount: allFiles.length };
 }
 
 function wireAnimButtons() {
@@ -4707,7 +6296,11 @@ async function applyLogoSequenceFrames(frames, meta = {}) {
   else if (typeof applyLogoPlayMode === "function") applyLogoPlayMode();
   else if (typeof replayLogo === "function") replayLogo();
   setLogoSeqStatus(`Loaded ${frames.length} frames · color: ${logoSeqState.detected}${meta.label ? " · " + meta.label : ""}`);
-  persistState?.();
+  // Autosave look only — never rewrite the preset list (logo sequences are too big for localStorage)
+  try { persistState?.(); } catch (_) {}
+  if ($("statusPill")) {
+    $("statusPill").textContent = `Logo sequence: ${frames.length} frames loaded (Save preset keeps theme/people; re-load sequence after switch)`;
+  }
 }
 
 async function loadLogoSequenceFromFiles(fileList) {
@@ -5173,8 +6766,19 @@ if (typeof setLogo === "function" && typeof logoDataUrl === "string") {
 const _playInOrig = playIn;
 playIn = function playInAnimated() {
   const timing = animTiming();
+  const l3 = $("l3");
+  if (!l3) return;
+  const dual = (typeof isDualStyle === "function" && isDualStyle())
+    || timing.style === "dualStack"
+    || l3.dataset.style === "aventura-dual"
+    || activeStyleId === "aventura-dual";
+
+  // Dual package: CSS dual-anim only — never JS-opacity the whole card (stuck at 0)
+  if (dual) {
+    return _playInOrig();
+  }
+
   if (timing.style === "none") {
-    const l3 = $("l3");
     l3.style.transition = "none";
     l3.style.opacity = "1";
     l3.style.transform = "";
@@ -5185,16 +6789,15 @@ playIn = function playInAnimated() {
     if (card) { card.style.opacity = ""; card.style.transform = ""; card.style.clipPath = ""; }
     renderPerson();
     replayLogo();
-    l3.classList.remove("hide");
+    l3.classList.remove("hide", "dual-anim");
     l3.classList.add("show");
     return;
   }
   // Preview only the IN portion quickly when selecting people
   const token = ++previewToken;
-  const l3 = $("l3");
   const logo = $("logoBox");
   const card = l3.querySelector(".card");
-  l3.classList.remove("show", "hide");
+  l3.classList.remove("show", "hide", "dual-anim");
   renderPerson();
   replayLogo();
   const start = performance.now();
@@ -5674,6 +7277,60 @@ function wireSimpleUx() {
     });
   }
 
+  // ── Simple preset switcher ──
+  function onSimplePresetPick(sel) {
+    if (!sel) return;
+    const id = sel.value;
+    if (!id) return;
+    const pr = loadPresets().find((x) => x.id === id);
+    if (pr) applyPreset(pr);
+  }
+  const sps = $("simplePresetSelect");
+  const spsBar = $("simplePresetSelectBar");
+  if (sps && !sps._wired) {
+    sps._wired = true;
+    sps.addEventListener("change", () => onSimplePresetPick(sps));
+  }
+  if (spsBar && !spsBar._wired) {
+    spsBar._wired = true;
+    spsBar.addEventListener("change", () => onSimplePresetPick(spsBar));
+  }
+  $("btnSimpleSavePreset")?.addEventListener("click", () => {
+    const name = ($("presetName") && $("presetName").value.trim())
+      || (activePresetId && (loadPresets().find((x) => x.id === activePresetId) || {}).name)
+      || "Aventura Civic Gold";
+    if ($("presetName")) $("presetName").value = name;
+    saveCurrentAsPreset(name);
+  });
+  $("btnSimpleSaveAsPreset")?.addEventListener("click", () => {
+    const base = ($("presetName") && $("presetName").value.trim()) || "My design";
+    const name = prompt("Save preset as:", base);
+    if (!name) return;
+    if ($("presetName")) $("presetName").value = name.trim();
+    saveCurrentAsPreset(name.trim(), { forceNewId: true });
+  });
+  $("fileSimplePreset")?.addEventListener("change", async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    try {
+      const pr = JSON.parse(await f.text());
+      if (!pr.id) pr.id = uid();
+      const list = loadPresets();
+      const idx = list.findIndex((x) => x.id === pr.id || x.name === pr.name);
+      if (idx >= 0) { pr.id = list[idx].id; list[idx] = { ...list[idx], ...pr, updated: Date.now() }; }
+      else list.unshift({ ...pr, updated: Date.now() });
+      activePresetId = pr.id;
+      savePresets(list);
+      applyPreset(pr);
+    } catch (err) {
+      alert("Could not import preset: " + (err.message || err));
+    }
+    e.target.value = "";
+  });
+
+  // Seed default only if empty; refresh both lists
+  try { ensureDefaultPresetSeeded(); } catch (_) {}
+  renderPresets();
+
   // Restore mode
   let mode = "simple";
   try { mode = localStorage.getItem("l3studio.uiMode") || "simple"; } catch (_) {}
@@ -5721,72 +7378,72 @@ if (typeof people !== "undefined") {
 }
 
 /* ── Design Wizard ── */
-const WIZ_STEPS = ["Source", "Colors", "Fonts", "Design", "Motion", "Done"];
+const WIZ_STEPS = ["Source", "Logo", "Colors", "Fonts", "Design", "Motion", "Done"];
 
-/** 25 design systems */
+/** Design systems — true structural variety (layout + accent + type + density) */
 const WIZ_DESIGNS = (() => {
   const bases = [
-    { name: "Civic Navy Bar", accent: "left", radius: 6, logo: 92, dense: false, feel: "formal" },
-    { name: "Soft Pill", accent: "left", radius: 18, logo: 88, dense: false, feel: "soft" },
-    { name: "Glass Plate", accent: "left", radius: 10, logo: 90, dense: false, feel: "glass", alpha: 0.78 },
-    { name: "Bold Cap", accent: "top", radius: 4, logo: 86, dense: true, feel: "bold" },
-    { name: "Minimal Line", accent: "bottom", radius: 2, logo: 80, dense: true, feel: "minimal" },
-    { name: "Stack Name", accent: "left", radius: 8, logo: 96, dense: false, feel: "stack" },
-    { name: "Logo Lead Wide", accent: "left", radius: 8, logo: 108, dense: false, feel: "logo" },
-    { name: "Compact News", accent: "left", radius: 3, logo: 72, dense: true, feel: "news" },
-    { name: "Editorial Serif", accent: "left", radius: 6, logo: 90, dense: false, feel: "serif" },
-    { name: "Broadcast Strip", accent: "fullleft", radius: 0, logo: 84, dense: true, feel: "strip" },
-    { name: "Warm Gold Edge", accent: "left", radius: 6, logo: 92, dense: false, feel: "gold" },
-    { name: "Cool Steel", accent: "left", radius: 6, logo: 90, dense: false, feel: "steel" },
-    { name: "Deep Teal", accent: "left", radius: 8, logo: 90, dense: false, feel: "teal" },
-    { name: "Midnight Violet", accent: "left", radius: 10, logo: 88, dense: false, feel: "violet" },
-    { name: "Charcoal Clean", accent: "left", radius: 6, logo: 86, dense: true, feel: "charcoal" },
-    { name: "High Contrast", accent: "left", radius: 4, logo: 92, dense: false, feel: "contrast" },
-    { name: "Soft Shadow", accent: "left", radius: 12, logo: 94, dense: false, feel: "shadow" },
-    { name: "Thin Accent", accent: "left", radius: 6, logo: 88, dense: false, feel: "thin", accentW: 3 },
-    { name: "Thick Accent", accent: "left", radius: 6, logo: 90, dense: false, feel: "thick", accentW: 10 },
-    { name: "Offset Badge", accent: "left", radius: 14, logo: 100, dense: false, feel: "badge" },
-    { name: "Lower Tight", accent: "left", radius: 5, logo: 78, dense: true, feel: "tight", bottom: 48 },
-    { name: "Airy Wide", accent: "left", radius: 10, logo: 96, dense: false, feel: "airy", padX: 36 },
-    { name: "Social Vertical", accent: "left", radius: 10, logo: 84, dense: true, feel: "social" },
-    { name: "Ceremony", accent: "left", radius: 8, logo: 98, dense: false, feel: "ceremony" },
-    { name: "Utility HUD", accent: "left", radius: 2, logo: 76, dense: true, feel: "hud" },
+    { name: "Civic Bar", layout: "row", accent: "left", radius: 6, logo: 92, logoSize: "md", dense: false, feel: "formal", blurb: "Classic left bar · logo + plate" },
+    { name: "Soft Pill", layout: "row", accent: "none", radius: 22, logo: 86, logoSize: "md", dense: false, feel: "soft", pill: true, blurb: "Fully rounded plate · no bar" },
+    { name: "Glass Float", layout: "logo-float", accent: "left", radius: 14, logo: 96, logoSize: "lg", dense: false, feel: "glass", alpha: 0.72, blurb: "Translucent plate · lifted logo" },
+    { name: "Top Cap News", layout: "row", accent: "top", radius: 4, logo: 78, logoSize: "sm", dense: true, feel: "news", nameCase: "upper", blurb: "Top accent rule · compact news" },
+    { name: "Underline Clean", layout: "row", accent: "bottom", radius: 2, logo: 80, logoSize: "sm", dense: true, feel: "minimal", blurb: "Bottom edge · minimal type" },
+    { name: "Stacked Identity", layout: "stack", accent: "left", radius: 10, logo: 100, logoSize: "lg", dense: false, feel: "stack", blurb: "Logo above · plate below" },
+    { name: "Logo First Wide", layout: "row", accent: "left", radius: 8, logo: 118, logoSize: "xl", dense: false, feel: "logo", gap: 22, blurb: "Hero logo · roomy gap" },
+    { name: "Right-Handed", layout: "row-reverse", accent: "right", radius: 8, logo: 90, logoSize: "md", dense: false, feel: "soft", blurb: "Logo on the right · reverse flow" },
+    { name: "Editorial Serif", layout: "row", accent: "left", radius: 6, logo: 88, logoSize: "md", dense: false, feel: "serif", fontFeel: "serif", blurb: "Serif name · literary tone" },
+    { name: "Full Bleed Strip", layout: "strip", accent: "fullleft", radius: 0, logo: 72, logoSize: "sm", dense: true, feel: "strip", bottom: 40, blurb: "Edge-to-edge lower strip" },
+    { name: "Bottom Banner", layout: "banner", accent: "top", radius: 0, logo: 80, logoSize: "sm", dense: true, feel: "news", bottom: 0, blurb: "Full-width bottom banner" },
+    { name: "Gold Ceremony", layout: "row", accent: "left", radius: 8, logo: 100, logoSize: "lg", dense: false, feel: "ceremony", fontFeel: "ceremony", accentW: 6, blurb: "Warm gold · formal weight" },
+    { name: "Steel HUD", layout: "row", accent: "left", radius: 2, logo: 74, logoSize: "sm", dense: true, feel: "hud", nameCase: "upper", titleCase: "upper", accentW: 2, blurb: "Utility mono · all caps" },
+    { name: "Thick Edge", layout: "row", accent: "left", radius: 4, logo: 90, logoSize: "md", dense: false, feel: "thick", accentW: 12, blurb: "Heavy accent rail" },
+    { name: "Hairline Edge", layout: "row", accent: "left", radius: 6, logo: 86, logoSize: "md", dense: false, feel: "thin", accentW: 2, blurb: "2px accent · quiet" },
+    { name: "Centered Stack", layout: "stack-center", accent: "none", radius: 12, logo: 96, logoSize: "lg", dense: false, feel: "ceremony", blurb: "Centered mark · no bar" },
+    { name: "High Contrast", layout: "row", accent: "left", radius: 0, logo: 92, logoSize: "md", dense: false, feel: "contrast", nameCase: "upper", blurb: "Black plate · white type" },
+    { name: "Social Pop", layout: "row", accent: "left", radius: 16, logo: 84, logoSize: "md", dense: true, feel: "social", pill: false, blurb: "Rounded · social energy" },
+    { name: "Teal Glass", layout: "row", accent: "left", radius: 12, logo: 90, logoSize: "md", dense: false, feel: "teal", alpha: 0.8, blurb: "Cool teal · soft alpha" },
+    { name: "Violet Night", layout: "logo-float", accent: "bottom", radius: 14, logo: 94, logoSize: "lg", dense: false, feel: "violet", blurb: "Violet plate · bottom rule" },
+    { name: "Charcoal Tight", layout: "row", accent: "none", radius: 4, logo: 70, logoSize: "sm", dense: true, feel: "charcoal", bottom: 52, blurb: "Small · low · no accent" },
+    { name: "Airy Wide", layout: "row", accent: "left", radius: 10, logo: 98, logoSize: "lg", dense: false, feel: "airy", padX: 40, gap: 24, blurb: "Extra padding · breathing room" },
+    { name: "Overline Civic", layout: "row", accent: "left", radius: 6, logo: 88, logoSize: "md", dense: false, feel: "formal", overline: true, blurb: "CITY tag above name" },
+    { name: "Split Badge", layout: "row", accent: "left", radius: 18, logo: 104, logoSize: "xl", dense: false, feel: "badge", accentW: 8, blurb: "Big logo · badge plate" },
+    { name: "Lower Tight", layout: "row", accent: "top", radius: 5, logo: 76, logoSize: "sm", dense: true, feel: "tight", bottom: 36, blurb: "Parked low · dense type" },
   ];
   return bases.map((b, i) => ({
     id: "d" + (i + 1),
     index: i + 1,
     ...b,
-    motionBias: b.feel, // used to rank animations
+    motionBias: b.feel,
   }));
 })();
 
-/** 25 motion recipes */
+/** Motion recipes — each has a unique live preview class */
 const WIZ_ANIMS = [
-  { id: "a01", name: "Rise Soft", style: "slideUp", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["formal","soft","ceremony"] },
-  { id: "a02", name: "Rise Snappy", style: "slideUp", inDur: 0.35, outDur: 0.28, hold: 2.5, bias: ["news","bold","hud"] },
-  { id: "a03", name: "From Left", style: "slideLeft", inDur: 0.5, outDur: 0.35, hold: 3, bias: ["strip","news","formal"] },
-  { id: "a04", name: "From Right", style: "slideRight", inDur: 0.5, outDur: 0.35, hold: 3, bias: ["soft","glass"] },
-  { id: "a05", name: "Scale In", style: "scaleFade", inDur: 0.45, outDur: 0.35, hold: 3, bias: ["badge","logo","soft"] },
-  { id: "a06", name: "Mask Wipe", style: "maskWipe", inDur: 0.6, outDur: 0.4, hold: 3, bias: ["strip","news","hud"] },
-  { id: "a07", name: "Rise + Blur", style: "riseBlur", inDur: 0.65, outDur: 0.45, hold: 3, bias: ["glass","shadow","ceremony"] },
-  { id: "a08", name: "Logo First", style: "logoLead", inDur: 0.7, outDur: 0.45, hold: 3.2, bias: ["logo","badge","ceremony"] },
-  { id: "a09", name: "Soft Drop", style: "dropSoft", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["soft","airy","serif"] },
-  { id: "a10", name: "Cut Hard", style: "none", inDur: 0.05, outDur: 0.05, hold: 3, bias: ["minimal","hud","news"] },
-  { id: "a11", name: "Slow Prestige", style: "slideUp", inDur: 0.85, outDur: 0.55, hold: 3.5, bias: ["ceremony","formal","serif"] },
-  { id: "a12", name: "Quick Lower", style: "slideUp", inDur: 0.3, outDur: 0.25, hold: 2.2, bias: ["tight","social","news"] },
-  { id: "a13", name: "Left News Push", style: "slideLeft", inDur: 0.38, outDur: 0.3, hold: 2.8, bias: ["news","strip","bold"] },
-  { id: "a14", name: "Elegant Scale", style: "scaleFade", inDur: 0.6, outDur: 0.4, hold: 3.2, bias: ["serif","ceremony","gold"] },
-  { id: "a15", name: "Glass Drift", style: "riseBlur", inDur: 0.75, outDur: 0.5, hold: 3.2, bias: ["glass","violet","teal"] },
-  { id: "a16", name: "Stagger Broad", style: "logoLead", inDur: 0.8, outDur: 0.5, hold: 3.5, bias: ["logo","wide","airy"] },
-  { id: "a17", name: "Punch In", style: "scaleFade", inDur: 0.32, outDur: 0.28, hold: 2.5, bias: ["bold","contrast","thick"] },
-  { id: "a18", name: "Thin Slide", style: "slideLeft", inDur: 0.48, outDur: 0.35, hold: 3, bias: ["thin","minimal","steel"] },
-  { id: "a19", name: "Social Pop", style: "slideUp", inDur: 0.4, outDur: 0.32, hold: 2.6, bias: ["social","badge","soft"] },
-  { id: "a20", name: "HUD Tick", style: "maskWipe", inDur: 0.4, outDur: 0.3, hold: 2.5, bias: ["hud","minimal","steel"] },
-  { id: "a21", name: "Ceremony Rise", style: "slideUp", inDur: 0.9, outDur: 0.6, hold: 4, bias: ["ceremony","formal","gold"] },
-  { id: "a22", name: "Charcoal Ease", style: "slideUp", inDur: 0.5, outDur: 0.38, hold: 3, bias: ["charcoal","minimal","news"] },
-  { id: "a23", name: "Teal Float", style: "riseBlur", inDur: 0.7, outDur: 0.45, hold: 3, bias: ["teal","glass","soft"] },
-  { id: "a24", name: "Violet Soft", style: "dropSoft", inDur: 0.6, outDur: 0.42, hold: 3.1, bias: ["violet","soft","shadow"] },
-  { id: "a25", name: "Balanced Default", style: "slideUp", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["formal","soft","news"] },
+  { id: "a01", name: "Rise Soft", style: "slideUp", preview: "slideUp", speed: "med", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["formal","soft","ceremony"], blurb: "Ease up from below · classic lower-third" },
+  { id: "a02", name: "Rise Snappy", style: "slideUp", preview: "slideUp", speed: "snappy", inDur: 0.32, outDur: 0.26, hold: 2.4, bias: ["news","bold","hud"], blurb: "Faster rise · news desk energy" },
+  { id: "a03", name: "From Left", style: "slideLeft", preview: "slideLeft", speed: "med", inDur: 0.5, outDur: 0.35, hold: 3, bias: ["strip","news","formal"], blurb: "Slides in from frame left" },
+  { id: "a04", name: "From Right", style: "slideRight", preview: "slideRight", speed: "med", inDur: 0.5, outDur: 0.35, hold: 3, bias: ["soft","glass"], blurb: "Slides in from frame right" },
+  { id: "a05", name: "Scale Settle", style: "scaleFade", preview: "scaleFade", speed: "med", inDur: 0.48, outDur: 0.35, hold: 3, bias: ["badge","logo","soft"], blurb: "Grows into place · soft fade" },
+  { id: "a06", name: "Punch In", style: "scaleFade", preview: "punch", speed: "snappy", inDur: 0.28, outDur: 0.24, hold: 2.5, bias: ["bold","contrast","thick"], blurb: "Quick scale hit with overshoot" },
+  { id: "a07", name: "Mask Wipe", style: "maskWipe", preview: "maskWipe", speed: "med", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["strip","news","hud"], blurb: "Horizontal reveal wipe" },
+  { id: "a08", name: "Rise + Blur", style: "riseBlur", preview: "riseBlur", speed: "med", inDur: 0.65, outDur: 0.45, hold: 3, bias: ["glass","shadow","ceremony"], blurb: "Rises through blur into focus" },
+  { id: "a09", name: "Glass Drift", style: "riseBlur", preview: "drift", speed: "slow", inDur: 0.75, outDur: 0.5, hold: 3.2, bias: ["glass","violet","teal"], blurb: "Diagonal drift · dreamy glass" },
+  { id: "a10", name: "Logo First", style: "logoLead", preview: "logoLead", speed: "med", inDur: 0.7, outDur: 0.45, hold: 3.2, bias: ["logo","badge","ceremony"], blurb: "Logo lands · then type follows" },
+  { id: "a11", name: "Soft Drop", style: "dropSoft", preview: "dropSoft", speed: "med", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["soft","airy","serif"], blurb: "Drops from above · settles" },
+  { id: "a12", name: "Slow Prestige", style: "slideUp", preview: "slideUp", speed: "slow", inDur: 0.9, outDur: 0.55, hold: 3.8, bias: ["ceremony","formal","serif"], blurb: "Slow ceremonial rise · long hold" },
+  { id: "a13", name: "Quick Lower", style: "slideUp", preview: "slideUp", speed: "snappy", inDur: 0.28, outDur: 0.22, hold: 2.1, bias: ["tight","social","news"], blurb: "In fast · short hold · out fast" },
+  { id: "a14", name: "Left News Push", style: "slideLeft", preview: "slideLeft", speed: "snappy", inDur: 0.36, outDur: 0.28, hold: 2.6, bias: ["news","strip","bold"], blurb: "Hard left push · newscast" },
+  { id: "a15", name: "Elegant Scale", style: "scaleFade", preview: "scaleFade", speed: "slow", inDur: 0.7, outDur: 0.45, hold: 3.4, bias: ["serif","ceremony","gold"], blurb: "Slow scale · prestige hold" },
+  { id: "a16", name: "Stagger Broad", style: "logoLead", preview: "logoLead", speed: "slow", inDur: 0.85, outDur: 0.5, hold: 3.5, bias: ["logo","wide","airy"], blurb: "Wide stagger · logo then plate" },
+  { id: "a17", name: "Cut Hard", style: "none", preview: "none", speed: "snappy", inDur: 0.05, outDur: 0.05, hold: 3, bias: ["minimal","hud","news"], blurb: "No move · hard cut on/off" },
+  { id: "a18", name: "Thin Slide", style: "slideLeft", preview: "slideLeft", speed: "med", inDur: 0.48, outDur: 0.35, hold: 3, bias: ["thin","minimal","steel"], blurb: "Measured left slide" },
+  { id: "a19", name: "Social Pop", style: "scaleFade", preview: "punch", speed: "snappy", inDur: 0.34, outDur: 0.28, hold: 2.5, bias: ["social","badge","soft"], blurb: "Punchy pop for verticals" },
+  { id: "a20", name: "HUD Tick", style: "maskWipe", preview: "maskWipe", speed: "snappy", inDur: 0.35, outDur: 0.28, hold: 2.4, bias: ["hud","minimal","steel"], blurb: "Fast wipe · tech HUD" },
+  { id: "a21", name: "Ceremony Rise", style: "slideUp", preview: "slideUp", speed: "slow", inDur: 0.95, outDur: 0.6, hold: 4, bias: ["ceremony","formal","gold"], blurb: "Longest rise · event open" },
+  { id: "a22", name: "Charcoal Ease", style: "slideUp", preview: "slideUp", speed: "med", inDur: 0.5, outDur: 0.38, hold: 3, bias: ["charcoal","minimal","news"], blurb: "Neutral ease · workhorse" },
+  { id: "a23", name: "Teal Float", style: "riseBlur", preview: "riseBlur", speed: "med", inDur: 0.7, outDur: 0.45, hold: 3, bias: ["teal","glass","soft"], blurb: "Soft blur float" },
+  { id: "a24", name: "Violet Soft", style: "dropSoft", preview: "dropSoft", speed: "med", inDur: 0.6, outDur: 0.42, hold: 3.1, bias: ["violet","soft","shadow"], blurb: "Gentle drop settle" },
+  { id: "a25", name: "Balanced Default", style: "slideUp", preview: "slideUp", speed: "med", inDur: 0.55, outDur: 0.4, hold: 3, bias: ["formal","soft","news"], blurb: "Safe default · rise soft" },
 ];
 
 function animsForDesign(design) {
@@ -5852,6 +7509,13 @@ const wiz = {
   animId: null,
   presetName: "",
   peopleDraft: null,
+  // Logo selection (wizard)
+  logoKind: "embedded", // embedded | hold | custom | sequence
+  logoDataUrl: null,     // custom still / hold preview
+  logoLabel: "30-Year animated",
+  logoPlayMode: "once",  // once | hold | loop | pingpong
+  logoSeqFrames: null,   // ImageBitmap[] when sequence loaded in wizard
+  logoSeqMeta: null,
 };
 
 function openWizard() {
@@ -5862,14 +7526,29 @@ function openWizard() {
   wiz.animId = null;
   wiz.presetName = "";
   wiz.peopleDraft = null;
+  wiz.logoKind = "embedded";
+  wiz.logoDataUrl = null;
+  wiz.logoLabel = "30-Year animated";
+  wiz.logoPlayMode = "once";
+  wiz.logoSeqFrames = null;
+  wiz.logoSeqMeta = null;
   wiz.sourceUrl = ($("sourceUrl") && $("sourceUrl").value) || wiz.sourceUrl;
-  // seed colors from current theme
   try {
     const t = themeFromUI();
     wiz.colors = {
       panelTop: t.panelTop, panelBot: t.panelBot, accent: t.accent,
       name: t.nameColor, title: t.titleColor, alpha: parseFloat(t.panelAlpha) || 0.94,
     };
+  } catch (_) {}
+  // Prefer current logo if it's a small custom
+  try {
+    if (typeof logoDataUrl === "string" && logoDataUrl && logoDataUrl !== EMBEDDED_LOGO
+        && typeof EMBEDDED_HOLD !== "undefined" && logoDataUrl !== EMBEDDED_HOLD
+        && logoDataUrl.length < 800000) {
+      wiz.logoKind = "custom";
+      wiz.logoDataUrl = logoDataUrl;
+      wiz.logoLabel = "Current custom logo";
+    }
   } catch (_) {}
   renderWizard();
 }
@@ -5902,10 +7581,11 @@ function renderWizard() {
   }
   setWizStatus("");
   if (wiz.step === 0) body.innerHTML = wizStepSource();
-  else if (wiz.step === 1) body.innerHTML = wizStepColors();
-  else if (wiz.step === 2) body.innerHTML = wizStepFonts();
-  else if (wiz.step === 3) body.innerHTML = wizStepDesigns();
-  else if (wiz.step === 4) body.innerHTML = wizStepAnims();
+  else if (wiz.step === 1) body.innerHTML = wizStepLogo();
+  else if (wiz.step === 2) body.innerHTML = wizStepColors();
+  else if (wiz.step === 3) body.innerHTML = wizStepFonts();
+  else if (wiz.step === 4) body.innerHTML = wizStepDesigns();
+  else if (wiz.step === 5) body.innerHTML = wizStepAnims();
   else body.innerHTML = wizStepDone();
   wireWizardStepDom();
 }
@@ -5941,6 +7621,77 @@ function wizSourceFieldsHtml() {
   <p style="font-size:12px;color:#8b9bb0">We’ll fetch the page and pick names/titles (same live-update engine as the editor).</p>`;
 }
 
+
+function wizLogoPreviewSrc() {
+  if (wiz.logoKind === "hold" && typeof EMBEDDED_HOLD !== "undefined") return EMBEDDED_HOLD;
+  if (wiz.logoKind === "custom" && wiz.logoDataUrl) return wiz.logoDataUrl;
+  if (wiz.logoKind === "sequence" && wiz.logoDataUrl) return wiz.logoDataUrl;
+  return (typeof EMBEDDED_LOGO !== "undefined") ? EMBEDDED_LOGO : "";
+}
+
+function wizLogoCard(kind, title, sub, selected) {
+  const src = (() => {
+    if (kind === "hold" && typeof EMBEDDED_HOLD !== "undefined") return EMBEDDED_HOLD;
+    if (kind === "embedded") return (typeof EMBEDDED_LOGO !== "undefined") ? EMBEDDED_LOGO : "";
+    if ((kind === "custom" || kind === "sequence") && wiz.logoDataUrl && (wiz.logoKind === kind || (kind === "custom" && wiz.logoKind === "custom")))
+      return wiz.logoDataUrl;
+    if (kind === "custom" && wiz.logoKind === "custom" && wiz.logoDataUrl) return wiz.logoDataUrl;
+    if (kind === "sequence" && wiz.logoKind === "sequence" && wiz.logoDataUrl) return wiz.logoDataUrl;
+    return "";
+  })();
+  const preview = src
+    ? `<img src="${src}" alt="" />`
+    : (kind === "sequence"
+        ? `<div class="ph">Frame<br/>sequence</div>`
+        : `<div class="ph">Upload</div>`);
+  return `<button type="button" class="wiz-logo-card ${selected ? "selected" : ""}" data-logo-kind="${kind}">
+    <div class="wiz-logo-preview">${preview}</div>
+    <div class="meta"><div class="t">${title}</div><div class="s">${sub}</div></div>
+  </button>`;
+}
+
+function wizStepLogo() {
+  const play = wiz.logoPlayMode || "once";
+  const nSeq = wiz.logoSeqFrames ? wiz.logoSeqFrames.length : 0;
+  const customHint = wiz.logoKind === "custom" && wiz.logoLabel ? wiz.logoLabel : "PNG, WebP, JPG, TIFF, or short video";
+  const seqHint = nSeq
+    ? `${nSeq} frames ready · ${wiz.logoSeqMeta?.colorSpace || "srgb"}`
+    : "EXR / TIFF / PNG sequence — linear→display handled";
+  return `<div class="wiz-panel">
+    <h2>Logo</h2>
+    <p>Choose the mark that leads every lower third. Built-in 30-Year animation, a still hold, a single file, or a full frame sequence.</p>
+    <div class="wiz-logo-grid">
+      ${wizLogoCard("embedded", "30-Year animated", "Built-in · plays once, then holds", wiz.logoKind === "embedded")}
+      ${wizLogoCard("hold", "30-Year still", "Built-in final frame · no motion", wiz.logoKind === "hold")}
+      ${wizLogoCard("custom", "Custom file", customHint, wiz.logoKind === "custom")}
+      ${wizLogoCard("sequence", "Frame sequence", seqHint, wiz.logoKind === "sequence")}
+    </div>
+    <div class="wiz-logo-actions">
+      <label class="btn-wiz ghost" style="cursor:pointer">
+        Choose file…
+        <input type="file" id="wizLogoFile" accept="image/*,video/*,image/tiff,.tif,.tiff" hidden />
+      </label>
+      <label class="btn-wiz ghost" style="cursor:pointer">
+        Sequence files…
+        <input type="file" id="wizLogoSeq" accept="image/*,image/tiff,.exr,.EXR,.tif,.tiff,.TIF,.TIFF" multiple hidden />
+      </label>
+      <label class="btn-wiz ghost" style="cursor:pointer">
+        Sequence folder…
+        <input type="file" id="wizLogoFolder" multiple webkitdirectory directory hidden />
+      </label>
+    </div>
+    <label class="wiz-field" style="margin-top:16px;max-width:320px">Playback
+      <select id="wizLogoPlay">
+        <option value="once" ${play==="once"?"selected":""}>Play once → hold last</option>
+        <option value="hold" ${play==="hold"?"selected":""}>Freeze / hold</option>
+        <option value="loop" ${play==="loop"?"selected":""}>Loop</option>
+        <option value="pingpong" ${play==="pingpong"?"selected":""}>Ping pong</option>
+      </select>
+    </label>
+    <p class="wiz-logo-status" id="wizLogoStatus">${wiz.logoLabel || ""}</p>
+  </div>`;
+}
+
 function wizStepColors() {
   const c = wiz.colors;
   const pals = Object.entries(FEEL_COLORS).slice(0, 12);
@@ -5958,9 +7709,9 @@ function wizStepColors() {
       <label>Name<input type="color" id="wizCName" value="${c.name}" /></label>
       <label>Title<input type="color" id="wizCTitle" value="${c.title}" /></label>
     </div>
-    <div class="wiz-thumb" style="margin-top:14px;height:90px;border-radius:10px;overflow:hidden">
+    <div class="wiz-thumb" style="margin-top:14px;height:90px;border-radius:12px;overflow:hidden">
       <div class="mini-l3">
-        <div class="mini-logo"></div>
+        ${(typeof wizLogoPreviewSrc==="function" && wizLogoPreviewSrc()) ? `<div class="mini-logo has-img"><img src="${wizLogoPreviewSrc()}" alt="" /></div>` : `<div class="mini-logo"></div>`}
         <div class="mini-card" style="background:linear-gradient(180deg,${c.panelTop},${c.panelBot})">
           <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${c.accent}"></div>
           <div class="mini-name" style="color:${c.name}">Sample Name</div>
@@ -5997,44 +7748,105 @@ function wizStepFonts() {
 }
 
 function designToThemeBits(d, colors, fonts) {
-  const alpha = d.alpha != null ? d.alpha : (colors.alpha != null ? colors.alpha : 0.94);
-  const accentW = d.accentW != null ? d.accentW : (d.feel === "thin" ? 3 : d.feel === "thick" ? 10 : 5);
-  return {
-    panelTop: colors.panelTop,
-    panelBot: colors.panelBot,
-    accent: colors.accent,
-    nameColor: colors.name,
-    titleColor: colors.title,
-    stageBg: "#1a1a1a",
-    panelAlpha: String(alpha),
-    fontName: fonts.name,
-    fontTitle: fonts.title,
-    nameSize: (d.dense ? 34 : 40) + "px",
-    titleSize: (d.dense ? 15 : 18) + "px",
-    nameTracking: (fonts.nameTrack ?? 0.04) + "em",
-    titleTracking: (fonts.titleTrack ?? 0.12) + "em",
-    nameWeight: d.feel === "bold" || d.feel === "contrast" ? "700" : "600",
-    titleWeight: "500",
-    logoSize: (d.logo || 92) + "px",
-    gapLogo: (d.dense ? 12 : 16) + "px",
-    l3Left: "72px",
-    l3Bottom: (d.bottom || 80) + "px",
-    padX: (d.padX || (d.dense ? 20 : 28)) + "px",
-    padY: (d.dense ? 12 : 18) + "px",
-    radius: (d.radius ?? 6) + "px",
-    accentW: accentW + "px",
+  // Prefer design-linked feel fonts when marked
+  let f = fonts;
+  if (d.fontFeel && typeof FEEL_FONTS !== "undefined") {
+    const pack = FEEL_FONTS[d.fontFeel] || FEEL_FONTS.default;
+    f = { ...pack, ...fonts, name: fonts.name || pack.name, title: fonts.title || pack.title };
+  }
+  // Feel palette can tint if user left defaults — always structure wins
+  const feel = (typeof FEEL_COLORS !== "undefined" && FEEL_COLORS[d.feel]) || null;
+  const c = {
+    panelTop: colors.panelTop || feel?.panelTop,
+    panelBot: colors.panelBot || feel?.panelBot,
+    accent: colors.accent || feel?.accent,
+    name: colors.name || feel?.name,
+    title: colors.title || feel?.title,
+    alpha: d.alpha != null ? d.alpha : (colors.alpha != null ? colors.alpha : (feel?.alpha != null ? feel.alpha : 0.94)),
   };
+  const accentW = d.accentW != null ? d.accentW : (d.feel === "thin" ? 2 : d.feel === "thick" ? 12 : 5);
+  const nameSz = d.dense ? 32 : (d.layout === "banner" || d.layout === "strip" ? 36 : 40);
+  const titleSz = d.dense ? 14 : 17;
+  return {
+    panelTop: c.panelTop,
+    panelBot: c.panelBot,
+    accent: c.accent,
+    nameColor: c.name,
+    titleColor: c.title,
+    stageBg: "#1a1a1a",
+    panelAlpha: String(c.alpha),
+    fontName: f.name,
+    fontTitle: f.title,
+    nameSize: nameSz + "px",
+    titleSize: titleSz + "px",
+    nameTracking: (f.nameTrack ?? (d.nameCase === "upper" ? 0.06 : 0.04)) + "em",
+    titleTracking: (f.titleTrack ?? (d.titleCase === "upper" ? 0.16 : 0.12)) + "em",
+    nameWeight: d.feel === "bold" || d.feel === "contrast" || d.nameCase === "upper" ? "700" : "600",
+    titleWeight: d.titleCase === "upper" ? "600" : "500",
+    logoSize: (d.logo || 92) + "px",
+    gapLogo: (d.gap != null ? d.gap : (d.dense ? 10 : 16)) + "px",
+    l3Left: (d.layout === "banner" || d.layout === "strip") ? "0px" : "72px",
+    l3Bottom: (d.bottom != null ? d.bottom : 80) + "px",
+    padX: (d.padX || (d.dense ? 18 : 28)) + "px",
+    padY: (d.dense ? 11 : 16) + "px",
+    radius: (d.pill ? 999 : (d.radius ?? 6)) + "px",
+    accentW: accentW + "px",
+    // structural flags for apply
+    _layout: d.layout || "row",
+    _accent: d.accent || "left",
+    _nameCase: d.nameCase || "normal",
+    _titleCase: d.titleCase || "normal",
+    _overline: !!d.overline,
+  };
+}
+
+function wizLogoSizeClass(d) {
+  return ({ sm: "sm", md: "", lg: "lg", xl: "xl" }[d.logoSize || "md"]) || "";
 }
 
 function wizThumbHtml(d, colors, fonts) {
   const t = designToThemeBits(d, colors, fonts);
-  return `<div class="wiz-thumb">
-    <div class="mini-l3">
-      <div class="mini-logo"></div>
-      <div class="mini-card" style="background:linear-gradient(180deg,${t.panelTop},${t.panelBot});border-radius:${t.radius}">
-        <div style="position:absolute;left:0;top:0;bottom:0;width:${parseFloat(t.accentW)}px;background:${t.accent}"></div>
-        <div class="mini-name" style="color:${t.nameColor};font-family:${t.fontName}">Mayor Sample</div>
-        <div class="mini-title" style="color:${t.titleColor};font-family:${t.fontTitle}">Title · City</div>
+  const logoSrc = (typeof wizLogoPreviewSrc === "function") ? wizLogoPreviewSrc() : "";
+  const ls = wizLogoSizeClass(d);
+  const logoInner = logoSrc
+    ? `<div class="mini-logo has-img ${ls}"><img src="${logoSrc}" alt="" /></div>`
+    : `<div class="mini-logo ${ls}"></div>`;
+
+  // Accent element
+  let acc = "";
+  const aw = parseFloat(t.accentW) || 4;
+  const thick = aw >= 8 ? " acc-thick" : (aw <= 2 ? " acc-thin" : "");
+  if (d.accent === "top") acc = `<div class="acc-top" style="background:${t.accent};height:${Math.max(2, aw)}px"></div>`;
+  else if (d.accent === "bottom") acc = `<div class="acc-bot" style="background:${t.accent};height:${Math.max(2, aw)}px"></div>`;
+  else if (d.accent === "right") acc = `<div class="acc-right${thick}" style="background:${t.accent};width:${aw}px"></div>`;
+  else if (d.accent === "left" || d.accent === "fullleft") acc = `<div class="acc-left${thick}" style="background:${t.accent};width:${aw}px"></div>`;
+
+  const cardCls = [
+    "mini-card",
+    d.pill ? "pill" : "",
+    (d.radius === 0 || d.layout === "banner" || d.layout === "strip") ? "sharp" : "",
+    d.feel === "glass" || (d.alpha != null && d.alpha < 0.85) ? "glass" : "",
+  ].filter(Boolean).join(" ");
+
+  const nameCls = "mini-name" + (d.nameCase === "upper" ? " upper" : "");
+  const titleCls = "mini-title" + (d.titleCase === "upper" ? " upper" : "");
+  const over = d.overline ? `<div class="overline" style="color:${t.accent}">CITY OF AVENTURA</div>` : "";
+
+  const lay = d.layout || "row";
+  const layCls = "mini-stage-l3 lay-" + lay;
+  const cardStyle = `background:linear-gradient(180deg,${t.panelTop},${t.panelBot});border-radius:${d.pill ? 999 : (d.radius ?? 6)}px;opacity:${t.panelAlpha}`;
+
+  // Banner / strip: full width thumb alignment
+  const thumbExtra = (lay === "banner" || lay === "strip") ? " style=\"align-items:stretch;padding:0\"" : "";
+
+  return `<div class="wiz-thumb layout-thumb"${thumbExtra}>
+    <div class="${layCls}">
+      ${lay === "stack-center" || lay === "stack" ? logoInner : logoInner}
+      <div class="${cardCls}" style="${cardStyle}">
+        ${acc}
+        ${over}
+        <div class="${nameCls}" style="color:${t.nameColor};font-family:${t.fontName}">Mayor Sample</div>
+        <div class="${titleCls}" style="color:${t.titleColor};font-family:${t.fontTitle}">Title · City</div>
       </div>
     </div>
   </div>`;
@@ -6042,35 +7854,79 @@ function wizThumbHtml(d, colors, fonts) {
 
 function wizStepDesigns() {
   return `<div class="wiz-panel">
-    <h2>Pick a design <span style="color:#8b9bb0;font-weight:500">(25)</span></h2>
-    <p>These apply your colors & fonts to different layouts. Click one to select.</p>
+    <h2>Pick a design</h2>
+    <p>Real layout differences — stack, banner, reverse, strip, accent placement, density. Your colors & logo are applied to each.</p>
   </div>
   <div class="wiz-card-grid" id="wizDesignGrid">
     ${WIZ_DESIGNS.map((d) => `
       <button type="button" class="wiz-option ${wiz.designId===d.id?"selected":""}" data-design="${d.id}">
         ${wizThumbHtml(d, wiz.colors, wiz.fonts)}
-        <div class="meta"><div class="t">${d.index}. ${d.name}</div><div class="s">${d.feel} · logo ${d.logo}px</div></div>
+        <div class="meta">
+          <div class="t">${d.index}. ${d.name}</div>
+          <div class="s">${d.blurb || d.feel}</div>
+          <div>
+            <span class="tag">${d.layout}</span>
+            <span class="tag">accent ${d.accent}</span>
+            ${d.dense ? '<span class="tag">dense</span>' : ''}
+            ${d.nameCase === "upper" ? '<span class="tag">caps</span>' : ''}
+          </div>
+        </div>
       </button>`).join("")}
+  </div>`;
+}
+
+function wizAnimPreviewHtml(a, d, colors, fonts, { hero = false } = {}) {
+  const t = designToThemeBits(d, colors, fonts);
+  const logoSrc = (typeof wizLogoPreviewSrc === "function") ? wizLogoPreviewSrc() : "";
+  const logo = logoSrc
+    ? `<div class="wa-logo"><img src="${logoSrc}" alt="" /></div>`
+    : `<div class="wa-logo"></div>`;
+  const preview = a.preview || a.style || "slideUp";
+  const speed = a.speed || "med";
+  // logoLead animates children; others animate whole .wa-l3
+  const playCls = preview === "logoLead"
+    ? `wa-l3 wa-play-logoLead wa-play-${speed}`
+    : `wa-l3 wa-play-${preview} wa-play-${speed}`;
+  const sampleName = (wiz.peopleDraft && wiz.peopleDraft[0]?.name) || (typeof people !== "undefined" && people[0]?.name) || "Howard S. Weinberg";
+  const sampleTitle = (wiz.peopleDraft && wiz.peopleDraft[0]?.title) || (typeof people !== "undefined" && people[0]?.title) || "Mayor · City of Aventura";
+  const shortName = String(sampleName).replace(/,?\s*Esq\.?/i, "").split(" ").slice(0, 3).join(" ");
+  const shortTitle = String(sampleTitle).length > 36 ? String(sampleTitle).slice(0, 34) + "…" : sampleTitle;
+  return `<div class="wiz-anim-stage">
+    <div class="${playCls}">
+      ${logo}
+      <div class="wa-card" style="background:linear-gradient(180deg,${t.panelTop},${t.panelBot});border-radius:${t.radius}">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:${parseFloat(t.accentW)||4}px;background:${t.accent}"></div>
+        <div class="wa-name" style="color:${t.nameColor};font-family:${t.fontName}">${shortName}</div>
+        <div class="wa-title" style="color:${t.titleColor};font-family:${t.fontTitle}">${shortTitle}</div>
+      </div>
+    </div>
   </div>`;
 }
 
 function wizStepAnims() {
   const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId) || WIZ_DESIGNS[0];
   const anims = animsForDesign(d);
+  const selected = anims.find((x) => x.id === wiz.animId) || anims[0];
+  if (!wiz.animId && selected) wiz.animId = selected.id;
   return `<div class="wiz-panel">
-    <h2>Motion for “${d.name}” <span style="color:#8b9bb0;font-weight:500">(25)</span></h2>
-    <p>Animations are ordered to fit this design. Pick one — that locks your preset.</p>
+    <h2>Motion for “${d.name}”</h2>
+    <p>Every card <b>plays a real preview</b> on a loop — hover to focus, click to select. Best matches for this design are listed first.</p>
   </div>
-  <div class="wiz-card-grid" id="wizAnimGrid">
+  <div class="wiz-anim-hero" id="wizAnimHero">
+    ${wizAnimPreviewHtml(selected, d, wiz.colors, wiz.fonts, { hero: true })}
+    <div class="hero-cap">
+      <b id="wizAnimHeroName">${selected.name}</b>
+      <span id="wizAnimHeroMeta">in ${selected.inDur}s · hold ${selected.hold}s · out ${selected.outDur}s · ${selected.blurb || selected.style}</span>
+    </div>
+  </div>
+  <div class="wiz-anim-grid" id="wizAnimGrid">
     ${anims.map((a, i) => `
-      <button type="button" class="wiz-option ${wiz.animId===a.id?"selected":""}" data-anim="${a.id}">
-        <div class="wiz-thumb" style="display:grid;place-items:center;color:#8b9bb0;font-size:12px">
-          <div>
-            <div style="font-size:22px;margin-bottom:6px">${({slideUp:"↑",slideLeft:"←",slideRight:"→",scaleFade:"◍",maskWipe:"▣",riseBlur:" cons",logoLead:"◉",dropSoft:"↓",none:"▣"}[a.style]||"✦")}</div>
-            <div>${a.style}</div>
-          </div>
+      <button type="button" class="wiz-anim-card ${wiz.animId===a.id?"selected":""}" data-anim="${a.id}">
+        ${wizAnimPreviewHtml(a, d, wiz.colors, wiz.fonts)}
+        <div class="meta">
+          <div class="t">${i+1}. ${a.name}</div>
+          <div class="s">${a.blurb || a.style} · ${a.inDur}s in · ${a.hold}s hold</div>
         </div>
-        <div class="meta"><div class="t">${i+1}. ${a.name}</div><div class="s">in ${a.inDur}s · hold ${a.hold}s · out ${a.outDur}s</div></div>
       </button>`).join("")}
   </div>`;
 }
@@ -6078,15 +7934,26 @@ function wizStepAnims() {
 function wizStepDone() {
   const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId);
   const a = WIZ_ANIMS.find((x) => x.id === wiz.animId);
+  const src = (typeof wizLogoPreviewSrc === "function") ? wizLogoPreviewSrc() : "";
+  const logoLabel = wiz.logoLabel || ({
+    embedded: "30-Year animated",
+    hold: "30-Year still",
+    custom: "Custom logo",
+    sequence: "Frame sequence",
+  }[wiz.logoKind] || "Logo");
   return `<div class="wiz-panel">
-    <h2>Preset ready</h2>
-    <p><b>${wiz.presetName || "Untitled"}</b> is saved in your preset list and applied to the editor.</p>
-    <ul style="color:#c5d4ea;font-size:13px;line-height:1.6">
-      <li>Design: ${d ? d.name : "—"}</li>
-      <li>Motion: ${a ? a.name : "—"}</li>
-      <li>People: ${(wiz.peopleDraft || people || []).length}</li>
-    </ul>
-    <p style="margin-top:12px">Click <b>Open editor</b> to download animations or fine-tune in Advanced.</p>
+    <h2>Ready to create</h2>
+    <p><b>${wiz.presetName || "Untitled"}</b> is saved and applied. Switch presets anytime from the sidebar.</p>
+    <div class="wiz-done-hero">
+      <div class="wiz-done-logo">${src ? `<img src="${src}" alt="" />` : ""}</div>
+      <ul class="wiz-done-list">
+        <li><span>Logo</span> ${logoLabel}</li>
+        <li><span>Design</span> ${d ? d.name : "—"}</li>
+        <li><span>Motion</span> ${a ? a.name : "—"}</li>
+        <li><span>People</span> ${(wiz.peopleDraft || people || []).length}</li>
+      </ul>
+    </div>
+    <p style="margin-top:18px;margin-bottom:0">Open the editor to download full animations or refine in Advanced.</p>
   </div>`;
 }
 
@@ -6151,12 +8018,142 @@ function wireWizardStepDom() {
     };
   });
 
-  // anims
+  // anims — live previews; click selects; hover updates hero
+  function wizRefreshAnimHero(animId) {
+    const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId) || WIZ_DESIGNS[0];
+    const a = WIZ_ANIMS.find((x) => x.id === animId) || WIZ_ANIMS[0];
+    if (!a) return;
+    const hero = document.getElementById("wizAnimHero");
+    if (!hero) return;
+    const stage = wizAnimPreviewHtml(a, d, wiz.colors, wiz.fonts, { hero: true });
+    const cap = `<div class="hero-cap"><b id="wizAnimHeroName">${a.name}</b><span id="wizAnimHeroMeta">in ${a.inDur}s · hold ${a.hold}s · out ${a.outDur}s · ${a.blurb || a.style}</span></div>`;
+    hero.innerHTML = stage + cap;
+    // force restart animations
+    hero.querySelectorAll("[class*=wa-play]").forEach((el) => {
+      el.style.animation = "none";
+      void el.offsetWidth;
+      el.style.animation = "";
+    });
+  }
   document.querySelectorAll("#wizAnimGrid [data-anim]").forEach((b) => {
     b.onclick = () => {
       wiz.animId = b.getAttribute("data-anim");
-      document.querySelectorAll("#wizAnimGrid .wiz-option").forEach((x) => x.classList.toggle("selected", x === b));
+      document.querySelectorAll("#wizAnimGrid .wiz-anim-card, #wizAnimGrid .wiz-option").forEach((x) => x.classList.toggle("selected", x === b));
+      wizRefreshAnimHero(wiz.animId);
     };
+    b.onmouseenter = () => {
+      const id = b.getAttribute("data-anim");
+      if (id) wizRefreshAnimHero(id);
+    };
+  });
+
+  // logo picker
+  document.querySelectorAll("#wizard [data-logo-kind]").forEach((b) => {
+    b.onclick = () => {
+      const kind = b.getAttribute("data-logo-kind");
+      if (kind === "custom" && !wiz.logoDataUrl && wiz.logoKind !== "custom") {
+        document.getElementById("wizLogoFile")?.click();
+        return;
+      }
+      if (kind === "sequence" && !wiz.logoSeqFrames) {
+        document.getElementById("wizLogoFolder")?.click();
+        return;
+      }
+      wiz.logoKind = kind;
+      if (kind === "embedded") {
+        wiz.logoLabel = "30-Year animated";
+        wiz.logoDataUrl = null;
+        wiz.logoSeqFrames = null;
+        if (wiz.logoPlayMode === "hold") wiz.logoPlayMode = "once";
+      } else if (kind === "hold") {
+        wiz.logoLabel = "30-Year still";
+        wiz.logoDataUrl = null;
+        wiz.logoSeqFrames = null;
+        wiz.logoPlayMode = "hold";
+      }
+      renderWizard();
+    };
+  });
+  const wizPlay = document.getElementById("wizLogoPlay");
+  if (wizPlay) {
+    wizPlay.onchange = () => { wiz.logoPlayMode = wizPlay.value || "once"; };
+  }
+  const setLogoStatus = (msg) => {
+    const el = document.getElementById("wizLogoStatus");
+    if (el) el.textContent = msg || "";
+    setWizStatus(msg || "");
+  };
+  const onWizSingleLogo = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      wiz.logoKind = "custom";
+      wiz.logoDataUrl = reader.result;
+      wiz.logoLabel = file.name;
+      wiz.logoSeqFrames = null;
+      wiz.logoSeqMeta = null;
+      setLogoStatus("Loaded " + file.name);
+      renderWizard();
+    };
+    reader.onerror = () => setLogoStatus("Could not read file");
+    reader.readAsDataURL(file);
+  };
+  document.getElementById("wizLogoFile")?.addEventListener("change", (e) => {
+    const f = e.target.files?.[0];
+    onWizSingleLogo(f);
+    e.target.value = "";
+  });
+  const onWizSequence = async (fileList) => {
+    if (!fileList?.length) return;
+    try {
+      setLogoStatus("Loading sequence…");
+      if (typeof loadLogoSequenceFromFiles !== "function" && typeof sortSequenceFiles !== "function") {
+        throw new Error("Sequence loader not ready");
+      }
+      // Decode frames without immediately applying to main stage — then apply when saving preset
+      const files = sortSequenceFiles(fileList);
+      if (!files.length) throw new Error("No image/EXR frames in selection");
+      const cs = resolveLogoColorSpace(files);
+      const frames = [];
+      for (let i = 0; i < files.length; i++) {
+        if (i % 4 === 0) setLogoStatus(`Loading frame ${i + 1}/${files.length}…`);
+        try {
+          frames.push(await fileToBitmapConverted(files[i], cs));
+        } catch (err) {
+          console.warn("wiz seq skip", files[i].name, err);
+        }
+        await new Promise((r) => setTimeout(r, 0));
+      }
+      if (!frames.length) throw new Error("Could not decode any frames");
+      // hold preview = last frame as data URL
+      let preview = null;
+      try {
+        const last = frames[frames.length - 1];
+        const c = document.createElement("canvas");
+        c.width = last.width; c.height = last.height;
+        c.getContext("2d").drawImage(last, 0, 0);
+        preview = c.toDataURL("image/png");
+      } catch (_) {}
+      wiz.logoKind = "sequence";
+      wiz.logoSeqFrames = frames;
+      wiz.logoSeqMeta = { colorSpace: cs, label: files[0].name, fps: 24, count: frames.length };
+      wiz.logoDataUrl = preview;
+      wiz.logoLabel = `${frames.length} frames · ${files[0].name}`;
+      if (!wiz.logoPlayMode || wiz.logoPlayMode === "hold") wiz.logoPlayMode = "once";
+      setLogoStatus(`Loaded ${frames.length} frames`);
+      renderWizard();
+    } catch (err) {
+      setLogoStatus(String(err.message || err));
+      alert(err.message || err);
+    }
+  };
+  document.getElementById("wizLogoSeq")?.addEventListener("change", async (e) => {
+    await onWizSequence(e.target.files);
+    e.target.value = "";
+  });
+  document.getElementById("wizLogoFolder")?.addEventListener("change", async (e) => {
+    await onWizSequence(e.target.files);
+    e.target.value = "";
   });
 }
 
@@ -6267,11 +8264,18 @@ function applyWizardThemeToEditor(theme) {
     ...themeFromUI(),
     ...theme,
   });
-  // sync tracking sliders if present
   if ($("nameTracking") && theme.nameTracking) $("nameTracking").value = parseFloat(theme.nameTracking);
   if ($("titleTracking") && theme.titleTracking) $("titleTracking").value = parseFloat(theme.titleTracking);
   if ($("nameTrackVal") && $("nameTracking")) $("nameTrackVal").textContent = formatTrack($("nameTracking").value);
   if ($("titleTrackVal") && $("titleTracking")) $("titleTrackVal").textContent = formatTrack($("titleTracking").value);
+  // Structural layout on the real L3
+  const l3 = $("l3");
+  if (l3) {
+    l3.dataset.layout = theme._layout || "row";
+    l3.dataset.accent = theme._accent || "left";
+    l3.dataset.namecase = theme._nameCase || "normal";
+    l3.dataset.titlecase = theme._titleCase || "normal";
+  }
 }
 
 function applyWizardAnimToEditor(anim) {
@@ -6286,7 +8290,7 @@ function applyWizardAnimToEditor(anim) {
   if (typeof applyLogoPlayMode === "function") applyLogoPlayMode();
 }
 
-function saveWizardPreset() {
+async function saveWizardPreset() {
   const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId);
   const a = WIZ_ANIMS.find((x) => x.id === wiz.animId);
   if (!d || !a) throw new Error("Pick a design and a motion");
@@ -6300,39 +8304,81 @@ function saveWizardPreset() {
     selectedId = people[0]?.id || null;
   }
 
+  // Apply logo selection from wizard
+  if ($("logoPlayMode")) $("logoPlayMode").value = wiz.logoPlayMode || "once";
+  try {
+    if (wiz.logoKind === "sequence" && wiz.logoSeqFrames?.length && typeof applyLogoSequenceFrames === "function") {
+      await applyLogoSequenceFrames(wiz.logoSeqFrames, {
+        colorSpace: wiz.logoSeqMeta?.colorSpace || "srgb",
+        label: wiz.logoLabel || "wizard sequence",
+        fps: wiz.logoSeqMeta?.fps || 24,
+      });
+    } else if (wiz.logoKind === "hold" && typeof EMBEDDED_HOLD !== "undefined" && typeof setLogo === "function") {
+      await setLogo(EMBEDDED_HOLD);
+    } else if (wiz.logoKind === "custom" && wiz.logoDataUrl && typeof setLogo === "function") {
+      await setLogo(wiz.logoDataUrl);
+    } else if (typeof setLogo === "function" && typeof EMBEDDED_LOGO !== "undefined") {
+      await setLogo(EMBEDDED_LOGO);
+    }
+    if (typeof applyLogoPlayMode === "function") applyLogoPlayMode();
+  } catch (logoErr) {
+    console.warn("wizard logo apply", logoErr);
+    if (typeof setLogo === "function" && typeof EMBEDDED_LOGO !== "undefined") {
+      try { await setLogo(EMBEDDED_LOGO); } catch (_) {}
+    }
+  }
+
   const name = wiz.presetName || `${d.name} · ${a.name}`;
   wiz.presetName = name;
   if ($("presetName")) $("presetName").value = name;
   if ($("sourceUrl") && wiz.sourceUrl) $("sourceUrl").value = wiz.sourceUrl;
 
-  // build payload and save
   const list = typeof loadPresets === "function" ? loadPresets() : [];
   const payload = (typeof currentPresetPayload === "function")
     ? currentPresetPayload(name, { forDownload: false })
     : { name, theme, people, id: uid(), updated: Date.now() };
   payload.name = name;
-  payload.wizard = { designId: d.id, animId: a.id, sourceType: wiz.sourceType, sourceUrl: wiz.sourceUrl };
-  // ensure theme in payload
+  payload.wizard = {
+    designId: d.id,
+    animId: a.id,
+    sourceType: wiz.sourceType,
+    sourceUrl: wiz.sourceUrl,
+    logoKind: wiz.logoKind,
+    logoLabel: wiz.logoLabel,
+  };
   payload.theme = { ...payload.theme, ...theme };
-  payload.logoPlayMode = "once";
+  payload.logoPlayMode = wiz.logoPlayMode || "once";
+  // Prefer refs for built-ins so storage stays light
+  if (wiz.logoKind === "embedded") {
+    payload.logoRef = "embedded";
+    payload.logoDataUrl = null;
+  } else if (wiz.logoKind === "hold") {
+    payload.logoRef = "hold";
+    payload.logoDataUrl = null;
+  } else if (wiz.logoKind === "sequence") {
+    // sequences not stored in localStorage
+    payload.logoRef = "sequence-session";
+    payload.logoOmitted = true;
+    payload.logoDataUrl = null;
+  }
   const idx = list.findIndex((x) => x.name === name);
   if (idx >= 0) { payload.id = list[idx].id; list[idx] = payload; }
   else list.unshift(payload);
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   } catch (e) {
-    // prune and retry
     while (list.length > 1) {
       list.pop();
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); break; } catch (_) {}
     }
   }
+  if (typeof activePresetId !== "undefined") activePresetId = payload.id;
   if (typeof renderPresets === "function") renderPresets();
   if (typeof renderList === "function") renderList();
   if (typeof renderPerson === "function") renderPerson();
   if (typeof playIn === "function") playIn();
   if (typeof persistState === "function") persistState();
-  if ($("statusPill")) $("statusPill").textContent = "Preset saved: " + name;
+  if ($("statusPill")) $("statusPill").textContent = "Design saved: " + name;
 }
 
 async function wizNext() {
@@ -6341,9 +8387,22 @@ async function wizNext() {
     if (wiz.step === 0) {
       await wizLoadPeople();
       await wizExtractColorsFromSource();
-      wiz.step = 1;
+      wiz.step = 1; // Logo
     } else if (wiz.step === 1) {
-      // colors already in wiz.colors via inputs
+      // Logo step — require a kind
+      if (!wiz.logoKind) { setWizStatus("Pick a logo to continue"); return; }
+      if (wiz.logoKind === "custom" && !wiz.logoDataUrl) {
+        setWizStatus("Choose a custom logo file, or pick a built-in option");
+        return;
+      }
+      if (wiz.logoKind === "sequence" && !(wiz.logoSeqFrames && wiz.logoSeqFrames.length)) {
+        setWizStatus("Load a frame sequence, or pick a built-in logo");
+        return;
+      }
+      const playEl = document.getElementById("wizLogoPlay");
+      if (playEl) wiz.logoPlayMode = playEl.value || wiz.logoPlayMode || "once";
+      wiz.step = 2; // Colors
+    } else if (wiz.step === 2) {
       const top = document.getElementById("wizCTop");
       if (top) {
         wiz.colors.panelTop = document.getElementById("wizCTop").value;
@@ -6352,21 +8411,21 @@ async function wizNext() {
         wiz.colors.name = document.getElementById("wizCName").value;
         wiz.colors.title = document.getElementById("wizCTitle").value;
       }
-      wiz.step = 2;
-    } else if (wiz.step === 2) {
-      readWizSourceFields();
-      wiz.step = 3;
+      wiz.step = 3; // Fonts
     } else if (wiz.step === 3) {
-      if (!wiz.designId) { setWizStatus("Pick a design to continue"); return; }
-      wiz.step = 4;
+      readWizSourceFields();
+      wiz.step = 4; // Design
     } else if (wiz.step === 4) {
+      if (!wiz.designId) { setWizStatus("Pick a design to continue"); return; }
+      wiz.step = 5; // Motion
+    } else if (wiz.step === 5) {
       if (!wiz.animId) { setWizStatus("Pick a motion to continue"); return; }
       const d = WIZ_DESIGNS.find((x) => x.id === wiz.designId);
       const a = WIZ_ANIMS.find((x) => x.id === wiz.animId);
       wiz.presetName = `${d.name} · ${a.name}`;
-      setWizStatus("Saving preset…");
-      saveWizardPreset();
-      wiz.step = 5;
+      setWizStatus("Creating design…");
+      await saveWizardPreset();
+      wiz.step = 6; // Done
     } else {
       closeWizard();
       if (typeof setAppMode === "function") setAppMode("simple");
@@ -6394,6 +8453,228 @@ function wireWizardChrome() {
   document.getElementById("wizBack")?.addEventListener("click", () => wizBack());
 }
 wireWizardChrome();
+
+
+/* ═══════════════════════════════════════════════════════════════
+   L3Studio Machine API v1.0.0 — AI / automation surface
+   Contract: ai/machine-api.json · Prompt: ai/OPERATOR_PROMPT.md
+   ═══════════════════════════════════════════════════════════════ */
+window.L3Studio = {
+  version: "1.0.0",
+  _lastJob: null,
+
+  describeForAI() {
+    const st = this.getState();
+    const n = (typeof people !== "undefined" && people) ? people.length : 0;
+    return [
+      "Lower Third Studio v" + this.version,
+      "Mission: design (wizard/preset) → render animated PNG sequences (alpha) → import DaVinci Resolve.",
+      "Open: this HTML file in Chrome, or https://vfxtraining-hub.github.io/lower-third-studio-web/",
+      "Docs: ai/OPERATOR_PROMPT.md, llms.txt, AGENTS.md, ai/workflows/resolve.md",
+      "People loaded: " + n,
+      "Mode: " + st.mode + " · Preset: " + (st.presetName || "—") + " · Aspect: " + st.aspect,
+      "Export: " + st.deliver + " @ " + st.fps + "fps · MB×" + st.mbSamples + " · " + st.width + "x" + st.height,
+      "Logo play: " + st.logoPlayMode,
+      "",
+      "Quick path:",
+      "  L3Studio.setExportDefaults({deliver:'pngseq', mbSamples:16, fps:24})",
+      "  await L3Studio.renderAll({download:true})",
+      "  L3Studio.downloadJobManifest()",
+      "  then: python3 scripts/unpack_l3_exports.py ~/Downloads --out ~/Movies/L3_Aventura_Exports",
+      "  then: python3 scripts/import_l3_to_resolve.py --source ~/Movies/L3_Aventura_Exports --timeline 'L3 Titles' --fps 24",
+      "",
+      "Wizard steps: Source → Logo → Colors → Fonts → Design → Motion → Done",
+      "UI: Simple (default) has presets + Download all; Advanced has full controls.",
+      "Never default to still-only PNG unless the user asks.",
+    ].join("\\n");
+  },
+
+  getState() {
+    const port = $("stage")?.classList.contains("portrait");
+    return {
+      mode: document.body.classList.contains("mode-advanced") ? "advanced" : "simple",
+      presetName: ($("presetName") && $("presetName").value) || "",
+      activePresetId: (typeof activePresetId !== "undefined") ? activePresetId : null,
+      aspect: port ? "9x16" : "16x9",
+      deliver: ($("animDeliver") && $("animDeliver").value) || "pngseq",
+      fps: +($("animFps")?.value || 24),
+      mbSamples: +($("mbSamples")?.value || 16),
+      width: +($("exportW")?.value || 1920),
+      height: +($("exportH")?.value || 1080),
+      logoPlayMode: (typeof getLogoPlayMode === "function") ? getLogoPlayMode() : (($("logoPlayMode") && $("logoPlayMode").value) || "once"),
+      personCount: (typeof people !== "undefined" && people) ? people.length : 0,
+      selectedId: (typeof selectedId !== "undefined") ? selectedId : null,
+      sourceUrl: ($("sourceUrl") && $("sourceUrl").value) || "",
+      wizardOpen: !!document.getElementById("wizard")?.classList.contains("open"),
+    };
+  },
+
+  getPeople() {
+    if (typeof people === "undefined" || !people) return [];
+    return people.map((p) => ({
+      id: p.id,
+      name: p.name,
+      displayName: p.displayName || "",
+      title: (typeof displayTitle === "function") ? displayTitle(p) : p.title,
+      baseTitle: p.baseTitle || p.title,
+      group: p.group || "",
+      viceMayor: !!p.viceMayor,
+    }));
+  },
+
+  selectPerson(idOrName) {
+    if (typeof people === "undefined") return null;
+    const q = String(idOrName || "").toLowerCase();
+    const p = people.find((x) => x.id === idOrName)
+      || people.find((x) => (x.name || "").toLowerCase() === q)
+      || people.find((x) => (x.name || "").toLowerCase().includes(q));
+    if (!p) return null;
+    selectedId = p.id;
+    if (typeof renderList === "function") renderList();
+    if (typeof renderPerson === "function") renderPerson();
+    else if (typeof playIn === "function") playIn();
+    return this.getPeople().find((x) => x.id === p.id) || p;
+  },
+
+  setMode(mode) {
+    if (typeof setAppMode === "function") setAppMode(mode === "advanced" ? "advanced" : "simple");
+  },
+
+  setAspect(aspect) {
+    const port = aspect === "9x16" || aspect === "9:16" || aspect === "portrait";
+    $("stage")?.classList.toggle("portrait", port);
+    if ($("exportW") && $("exportH")) {
+      if (port) { $("exportW").value = 1080; $("exportH").value = 1920; }
+      else { $("exportW").value = 1920; $("exportH").value = 1080; }
+    }
+    requestAnimationFrame(() => { if (typeof fitText === "function") fitText(); });
+  },
+
+  setExportDefaults(opts = {}) {
+    if (opts.deliver != null && $("animDeliver")) $("animDeliver").value = opts.deliver;
+    if (opts.fps != null && $("animFps")) $("animFps").value = opts.fps;
+    if (opts.mbSamples != null && $("mbSamples")) $("mbSamples").value = opts.mbSamples;
+    if (opts.width != null && $("exportW")) $("exportW").value = opts.width;
+    if (opts.height != null && $("exportH")) $("exportH").value = opts.height;
+    if (opts.logoPlayMode != null && $("logoPlayMode")) {
+      $("logoPlayMode").value = opts.logoPlayMode;
+      if (typeof applyLogoPlayMode === "function") applyLogoPlayMode();
+    }
+    if ($("exportFormat") && opts.alpha !== false) $("exportFormat").value = "full-alpha";
+    if ($("exportHoldLogo")) $("exportHoldLogo").checked = true;
+    return this.getState();
+  },
+
+  openWizard() { if (typeof openWizard === "function") openWizard(); },
+  closeWizard() { if (typeof closeWizard === "function") closeWizard(); },
+
+  listPresets() {
+    return (typeof loadPresets === "function") ? loadPresets() : [];
+  },
+
+  async applyPreset(nameOrId) {
+    const list = this.listPresets();
+    const pr = list.find((x) => x.id === nameOrId) || list.find((x) => x.name === nameOrId)
+      || list.find((x) => (x.name || "").toLowerCase() === String(nameOrId || "").toLowerCase());
+    if (!pr) return false;
+    if (typeof applyPreset === "function") applyPreset(pr);
+    return true;
+  },
+
+  savePreset(name) {
+    if (typeof saveCurrentAsPreset === "function") return saveCurrentAsPreset(name || ($("presetName")?.value) || "Untitled");
+    return null;
+  },
+
+  async liveUpdateRoster() {
+    if (typeof liveUpdateFromSource === "function") return liveUpdateFromSource();
+    if ($("btnLiveUpdate")) { $("btnLiveUpdate").click(); return { ok: true, via: "button" }; }
+    throw new Error("liveUpdateFromSource not available");
+  },
+
+  async renderOne({ personId, download = true } = {}) {
+    this.setExportDefaults({ deliver: ($("animDeliver")?.value) || "pngseq" });
+    if (personId) this.selectPerson(personId);
+    if (typeof renderAnimatedTitle === "function") {
+      const res = await renderAnimatedTitle(typeof selected === "function" ? selected() : null, { download });
+      if (res && this._recordJob) {
+        this._recordJob({
+          deliver: res.type || "pngseq",
+          titles: [{ id: selectedId, name: res.base, base: res.base, type: res.type, frameCount: res.frames?.length || 0 }],
+        });
+      }
+      return res;
+    }
+    throw new Error("renderAnimatedTitle missing");
+  },
+
+  async renderAll({ download = true } = {}) {
+    this.setExportDefaults({
+      deliver: "pngseq",
+      mbSamples: Math.max(16, +($("mbSamples")?.value || 16)),
+      fps: +($("animFps")?.value || 24),
+    });
+    if ($("animDeliver")) $("animDeliver").value = "pngseq";
+    if (typeof renderAllAnimated === "function") {
+      const res = await renderAllAnimated();
+      return { result: res, manifest: this._lastJob };
+    }
+    throw new Error("renderAllAnimated missing");
+  },
+
+  _recordJob(partial) {
+    const st = this.getState();
+    this._lastJob = {
+      version: "1.0.0",
+      app: "Lower Third Studio",
+      createdAt: new Date().toISOString(),
+      deliver: partial.deliver || st.deliver,
+      fps: partial.fps ?? st.fps,
+      width: partial.width ?? st.width,
+      height: partial.height ?? st.height,
+      mbSamples: partial.mbSamples ?? st.mbSamples,
+      presetName: partial.presetName || st.presetName,
+      zipName: partial.zipName || null,
+      titles: partial.titles || [],
+      resolve: {
+        bin: "L3_Aventura",
+        importAs: "image_sequence",
+        composite: "alpha_over_picture",
+        suggestedTimeline: "L3 Titles",
+        track: "V2",
+        script: "scripts/import_l3_to_resolve.py",
+        unpack: "scripts/unpack_l3_exports.py",
+      },
+      nextSteps: [
+        "Unzip downloads into a folder (scripts/unpack_l3_exports.py ~/Downloads --out ~/Movies/L3_Aventura_Exports)",
+        "python3 scripts/import_l3_to_resolve.py --source ~/Movies/L3_Aventura_Exports --bin L3_Aventura --timeline 'L3 Titles' --fps " + (partial.fps ?? st.fps),
+        "Or use Resolve MCP: resolve_status → import_media → append_clips",
+      ],
+    };
+    return this._lastJob;
+  },
+
+  getLastJobManifest() { return this._lastJob; },
+
+  downloadJobManifest() {
+    const man = this._lastJob || this._recordJob({ titles: this.getPeople().map((p) => ({ id: p.id, name: p.name, title: p.title })) });
+    const blob = new Blob([JSON.stringify(man, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "L3_job_manifest.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    if ($("statusPill")) $("statusPill").textContent = "Downloaded L3_job_manifest.json";
+    return man;
+  },
+};
+
+// Announce for agents scraping console / accessibility
+try {
+  document.documentElement.dataset.l3studio = window.L3Studio.version;
+  document.documentElement.dataset.l3api = "window.L3Studio";
+} catch (_) {}
+
 
 // initial play
 playIn();

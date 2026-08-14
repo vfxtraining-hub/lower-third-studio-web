@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "L3Studio Machine API",
+  "description": "Stable browser automation surface exposed as window.L3Studio after Lower_Third_Studio.html loads.",
+  "version": "1.0.0",
+  "global": "window.L3Studio",
+  "methods": {
+    "version": { "type": "string", "const": "1.0.0" },
+    "describeForAI": {
+      "description": "Returns a long plain-text operator brief (call first).",
+      "returns": "string"
+    },
+    "getState": {
+      "description": "Snapshot of mode, preset, aspect, export settings, person count, selected id.",
+      "returns": "object"
+    },
+    "getPeople": {
+      "description": "Array of {id, name, title, group, viceMayor, displayName}.",
+      "returns": "array"
+    },
+    "selectPerson": {
+      "params": { "idOrName": "string" },
+      "returns": "object|null"
+    },
+    "setMode": {
+      "params": { "mode": "simple|advanced" }
+    },
+    "setAspect": {
+      "params": { "aspect": "16x9|9x16" }
+    },
+    "setExportDefaults": {
+      "params": {
+        "deliver": "pngseq|webm|webm-vp8|still",
+        "fps": "number",
+        "mbSamples": "number",
+        "width": "number",
+        "height": "number",
+        "logoPlayMode": "once|hold|loop|pingpong"
+      }
+    },
+    "openWizard": { "returns": "void" },
+    "closeWizard": { "returns": "void" },
+    "listPresets": { "returns": "array" },
+    "applyPreset": {
+      "params": { "nameOrId": "string" },
+      "returns": "boolean"
+    },
+    "savePreset": {
+      "params": { "name": "string" },
+      "returns": "object"
+    },
+    "liveUpdateRoster": {
+      "description": "Fetch cityofaventura.com (or current source URL) and merge people.",
+      "returns": "Promise<object>"
+    },
+    "renderOne": {
+      "params": {
+        "personId": "string (optional)",
+        "download": "boolean (default true)"
+      },
+      "returns": "Promise<object>"
+    },
+    "renderAll": {
+      "params": { "download": "boolean (default true)" },
+      "returns": "Promise<object>"
+    },
+    "getLastJobManifest": {
+      "description": "Machine-readable last export job for NLE import (people, files, fps, resolveHints).",
+      "returns": "object|null"
+    },
+    "downloadJobManifest": {
+      "description": "Trigger download of L3_job_manifest.json",
+      "returns": "void"
+    }
+  },
+  "jobManifest": {
+    "version": "1.0.0",
+    "app": "Lower Third Studio",
+    "createdAt": "ISO-8601",
+    "deliver": "pngseq",
+    "fps": 24,
+    "width": 1920,
+    "height": 1080,
+    "mbSamples": 16,
+    "presetName": "string",
+    "titles": [
+      {
+        "id": "string",
+        "name": "string",
+        "title": "string",
+        "base": "L3_slug_name_style",
+        "zipName": "L3_…_pngseq.zip",
+        "sequencePattern": "BASE/BASE_#####.png",
+        "frameCount": 0
+      }
+    ],
+    "resolve": {
+      "bin": "L3_Aventura",
+      "importAs": "image_sequence",
+      "composite": "alpha_over_picture",
+      "suggestedTimeline": "L3 Titles",
+      "track": "V2"
+    }
+  }
+}
