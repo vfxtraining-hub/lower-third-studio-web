@@ -495,6 +495,11 @@
   <p class="simple-hero-hint">Pick a person → preview → <b>Download animation</b> (full PNG sequence + motion blur). Open <b>Advanced</b> for colors, fonts, timing, WebM, or stills.</p>
   <input type="search" class="simple-search" id="peopleSearch" placeholder="Search name or title…" autocomplete="off" />
 
+  <div class="stack-btns" style="margin-bottom:8px">
+    <button type="button" class="btn" id="btnLiveUpdate" style="flex:1" title="Re-fetch names & titles from the source website">↻ Live update from source</button>
+  </div>
+  <p class="hint" id="liveUpdateStatus" style="margin-top:-4px;margin-bottom:8px">Pulls latest people from cityofaventura.com (keeps Vice Mayor + nickname overrides).</p>
+
   <label class="simple-vm" id="simpleVmRow">
     <input type="checkbox" id="simpleViceMayor" />
     <span><b>Vice Mayor</b> title for selected</span>
@@ -516,7 +521,10 @@
     <details class="adv-fold" open>
       <summary>Edit person</summary>
       <div class="fold-body">
-        <label class="field">Name<input type="text" id="editName" /></label>
+        <label class="field">Legal / source name<input type="text" id="editName" /></label>
+        <label class="field">On-air name (nickname override)
+          <input type="text" id="editDisplayName" placeholder="Leave blank to use legal name" />
+        </label>
         <label class="field">Title (base)<input type="text" id="editTitle" /></label>
         <label class="field">Group<input type="text" id="editGroup" /></label>
         <div class="export-box" style="margin-bottom:8px">
@@ -554,7 +562,8 @@
         </label>
         <p class="hint">Roster ships from cityofaventura.com. Import CSV/JSON or paste rows to replace.</p>
         <div class="stack-btns">
-          <button type="button" class="btn ghost" id="btnLoadEmbedded">Reload city roster</button>
+          <button type="button" class="btn" id="btnLiveUpdateAdv">↻ Live update from source</button>
+          <button type="button" class="btn ghost" id="btnLoadEmbedded">Reload built-in roster</button>
           <label class="btn ghost" style="display:inline-block;cursor:pointer">
             Import CSV/JSON
             <input type="file" id="filePeople" accept=".csv,.json,text/csv,application/json" hidden />
@@ -868,6 +877,8 @@ const EMBEDDED_PEOPLE = [
   {
     "id": "ain",
     "name": "Clifford B. Ain",
+    "legalName": "Clifford B. Ain",
+    "displayName": "Clif B. Ain",
     "title": "Commissioner · Seat 3 · City of Aventura",
     "group": "City Commission",
     "source": "https://www.cityofaventura.com/"
@@ -1364,10 +1375,14 @@ function ensureBaseTitle(p) {
 function normalizePeople(list) {
   return (list || []).map((p) => {
     const q = { ...p };
+    if (q.legalName == null) q.legalName = q.name || "";
     if (q.baseTitle == null) q.baseTitle = q.title || "";
     if (q.viceMayor == null) q.viceMayor = false;
     if (q.viceMayorForm == null) q.viceMayorForm = "short";
     if (q.viceMayorCustom == null) q.viceMayorCustom = "";
+    if (q.displayName == null) q.displayName = "";
+    if (q.displayNameLocked == null) q.displayNameLocked = false;
+    if (typeof applyNameExceptions === "function") applyNameExceptions(q);
     return q;
   });
 }
@@ -1381,9 +1396,10 @@ function renderPerson() {
   const p = selected();
   if (!p) return;
   ensureBaseTitle(p);
-  $("nameEl").textContent = p.name;
+  $("nameEl").textContent = (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
   $("titleEl").textContent = displayTitle(p);
-  $("editName").value = p.name;
+  $("editName").value = p.legalName || p.name;
+  if ($("editDisplayName")) $("editDisplayName").value = p.displayName || "";
   $("editTitle").value = p.baseTitle || p.title || "";
   $("editGroup").value = p.group || "";
   if ($("editViceMayor")) {
@@ -1394,7 +1410,8 @@ function renderPerson() {
   if ($("editViceMayorForm")) $("editViceMayorForm").value = p.viceMayorForm || "short";
   if ($("editViceMayorCustom")) $("editViceMayorCustom").value = p.viceMayorCustom || "";
   const eff = displayTitle(p);
-  $("statusPill").textContent = p.viceMayor ? (p.name + " · VM") : p.name;
+  const onAirN = (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
+  $("statusPill").textContent = p.viceMayor ? (onAirN + " · VM") : onAirN;
   fitText();
 }
 
@@ -1450,7 +1467,8 @@ function renderList() {
     b.className = "person" + (p.id === selectedId ? " active" : "");
     b.innerHTML = `<div class="n"></div><div class="t"></div><div class="g"></div>`;
     ensureBaseTitle(p);
-    b.querySelector(".n").textContent = p.name + (p.viceMayor ? "  ★" : "");
+    const onAir = (typeof displayNameOf === "function" ? displayNameOf(p) : p.name);
+    b.querySelector(".n").textContent = onAir + (p.viceMayor ? "  ★" : "");
     b.querySelector(".t").textContent = displayTitle(p);
     b.querySelector(".g").textContent = (p.group || "") + (p.viceMayor ? " · Vice Mayor" : "");
     b.onclick = () => {
@@ -1704,9 +1722,14 @@ $("filePeople").onchange = async (e) => {
 
 $("btnApplyEdit").onclick = () => {
   const p = selected(); if (!p) return;
-  p.name = $("editName").value.trim();
+  p.legalName = $("editName").value.trim();
+  p.name = p.legalName;
+  const dn = ($("editDisplayName") && $("editDisplayName").value.trim()) || "";
+  p.displayName = dn;
+  p.displayNameLocked = !!dn; // manual edit locks nickname across live updates
+  if (!dn) applyNameExceptions(p); // re-apply Clif etc. if cleared
   p.baseTitle = $("editTitle").value.trim();
-  p.title = p.baseTitle; // keep title in sync as base when not overridden for export compat
+  p.title = p.baseTitle;
   p.group = $("editGroup").value.trim();
   p.viceMayor = !!($("editViceMayor") && $("editViceMayor").checked);
   p.viceMayorForm = ($("editViceMayorForm") && $("editViceMayorForm").value) || "short";
@@ -2025,10 +2048,10 @@ async function renderPersonToCanvas(person, opts = {}) {
   const _nTrack = (typeof nameTrackEm !== "undefined") ? nameTrackEm : (parseFloat(theme.nameTracking) || 0.04);
   const _tTrack = (typeof titleTrackEm !== "undefined") ? titleTrackEm : (parseFloat(theme.titleTracking) || 0.12);
   if (typeof fillTrackedText === "function") {
-    fillTrackedText(ctx, person.name, cardX + padX, nameBaseY, nameFontF, _nTrack, nameSize, theme.nameColor);
+    fillTrackedText(ctx, (typeof displayNameOf==='function'?displayNameOf(person):person.name), cardX + padX, nameBaseY, nameFontF, _nTrack, nameSize, theme.nameColor);
     fillTrackedText(ctx, displayTitle(person), cardX + padX, nameBaseY + 6 * s + titleSize, titleFontF, _tTrack, titleSize, theme.titleColor);
   } else {
-    ctx.fillStyle = theme.nameColor; ctx.font = nameFontF; ctx.fillText(person.name, cardX + padX, nameBaseY);
+    ctx.fillStyle = theme.nameColor; ctx.font = nameFontF; ctx.fillText((typeof displayNameOf==='function'?displayNameOf(person):person.name), cardX + padX, nameBaseY);
     ctx.fillStyle = theme.titleColor; ctx.font = titleFontF; ctx.fillText(displayTitle(person), cardX + padX, nameBaseY + 6 * s + titleSize);
   }
 
@@ -2466,7 +2489,8 @@ function shrinkTypeToWidth(ctx, person, theme, L) {
   };
 
   let guard = 80;
-  while (mtw(person.name, `${nameWgt} ${nameSize}px ${theme.fontName}`, nt, nameSize) > L.maxTextW && nameSize > 11 && guard--) {
+  const onAirName = (typeof displayNameOf === 'function' ? displayNameOf(person) : person.name);
+  while (mtw(onAirName, `${nameWgt} ${nameSize}px ${theme.fontName}`, nt, nameSize) > L.maxTextW && nameSize > 11 && guard--) {
     nameSize -= 0.5;
   }
   guard = 80;
@@ -2476,7 +2500,7 @@ function shrinkTypeToWidth(ctx, person, theme, L) {
 
   const nameFontF = `${nameWgt} ${nameSize}px ${theme.fontName}`;
   const titleFontF = `${titleWgt} ${titleSize}px ${theme.fontTitle}`;
-  const nameW = mtw(person.name, nameFontF, nt, nameSize);
+  const nameW = mtw(onAirName, nameFontF, nt, nameSize);
   const titleW = mtw(title, titleFontF, tt, titleSize);
   const textW = Math.max(nameW, titleW);
   let cardW = Math.ceil(textW + L.padX * 2 + L.accentW);
@@ -2573,10 +2597,10 @@ async function drawAnimatedFrame(ctx, W, H, person, logoImg, theme, timing, t, p
     const _nTrack = parseFloat(theme.nameTracking) || 0.04;
     const _tTrack = parseFloat(theme.titleTracking) || 0.12;
     if (typeof fillTrackedText === "function") {
-      fillTrackedText(ctx, person.name, cardX + padX, nameBaseY, nameFontF, _nTrack, nameSize, theme.nameColor);
+      fillTrackedText(ctx, (typeof displayNameOf==='function'?displayNameOf(person):person.name), cardX + padX, nameBaseY, nameFontF, _nTrack, nameSize, theme.nameColor);
       fillTrackedText(ctx, displayTitle(person), cardX + padX, nameBaseY + 6 * s + titleSize, titleFontF, _tTrack, titleSize, theme.titleColor);
     } else {
-      ctx.fillStyle = theme.nameColor; ctx.font = nameFontF; ctx.fillText(person.name, cardX + padX, nameBaseY);
+      ctx.fillStyle = theme.nameColor; ctx.font = nameFontF; ctx.fillText((typeof displayNameOf==='function'?displayNameOf(person):person.name), cardX + padX, nameBaseY);
       ctx.fillStyle = theme.titleColor; ctx.font = titleFontF; ctx.fillText(displayTitle(person), cardX + padX, nameBaseY + 6 * s + titleSize);
     }
     ctx.restore();
@@ -3310,6 +3334,336 @@ function setAppMode(mode) {
   fitText?.();
 }
 
+
+/* ── Display names (nicknames) + live source update ── */
+
+/** Built-in nickname exceptions (applied after scrape if no manual override). */
+const NAME_EXCEPTIONS = {
+  // key: normalized legal name fragment → preferred on-air first name
+  "clifford b. ain": { displayName: "Clif B. Ain", note: "Goes by Clif" },
+  "clifford ain": { displayName: "Clif B. Ain", note: "Goes by Clif" },
+};
+
+function normNameKey(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/,?\s*(esq\.?|mmc|phd|jr\.?|sr\.?)\s*$/i, "")
+    .replace(/[^a-z0-9\s.]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function applyNameExceptions(p) {
+  if (!p) return p;
+  // Manual override always wins
+  if (p.displayNameLocked && p.displayName) return p;
+  const key = normNameKey(p.name || p.legalName || "");
+  const ex = NAME_EXCEPTIONS[key];
+  if (ex) {
+    if (!p.displayName || p.displayName === p.name) {
+      p.displayName = ex.displayName;
+    }
+    p.nicknameNote = ex.note;
+  }
+  // Also match last-name Ain + first Clifford
+  if (!p.displayName && /clifford/i.test(p.name || "") && /\bain\b/i.test(p.name || "")) {
+    p.displayName = "Clif B. Ain";
+    p.nicknameNote = "Goes by Clif";
+  }
+  return p;
+}
+
+/** On-air name for preview/export. */
+function displayNameOf(p) {
+  if (!p) return "";
+  if (p.displayName && String(p.displayName).trim()) return String(p.displayName).trim();
+  return p.name || "";
+}
+
+function slugPersonId(name) {
+  return String(name || "person")
+    .toLowerCase()
+    .replace(/,?\s*(esq\.?|mmc)\s*/gi, " ")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 40) || "person";
+}
+
+async function fetchHtmlViaProxy(url) {
+  const proxies = [
+    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    (u) => u, // direct (works only if CORS allows)
+  ];
+  let lastErr = null;
+  for (const build of proxies) {
+    const target = build(url);
+    try {
+      const res = await fetch(target, { method: "GET", cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      if (!text || text.length < 200) throw new Error("empty body");
+      // allorigins sometimes wraps JSON
+      if (text.trim().startsWith("{") && text.includes("contents")) {
+        try {
+          const j = JSON.parse(text);
+          if (j.contents) return j.contents;
+        } catch (_) {}
+      }
+      return text;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error("fetch failed");
+}
+
+function parsePeopleFromHtml(html, sourceUrl) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const found = [];
+  const seen = new Set();
+
+  const push = (name, title, group) => {
+    name = (name || "").replace(/\s+/g, " ").trim();
+    title = (title || "").replace(/\s+/g, " ").trim();
+    if (!name || name.length < 3 || name.length > 80) return;
+    if (/city commission|about the|staff directory|contact us|quick links/i.test(name)) return;
+    const key = normNameKey(name);
+    if (seen.has(key)) return;
+    seen.add(key);
+    // Prefer commissioner/mayor/director-looking titles; allow empty → fill later
+    found.push({
+      id: slugPersonId(name),
+      name,
+      legalName: name,
+      displayName: "",
+      title: title || "",
+      baseTitle: title || "",
+      group: group || "",
+      source: sourceUrl,
+      viceMayor: false,
+      viceMayorForm: "short",
+      viceMayorCustom: "",
+    });
+  };
+
+  // Strategy A: headings (h2/h3/h4) followed by nearby title text
+  const heads = [...doc.querySelectorAll("h1,h2,h3,h4,h5,.widgetTitle,.fr-view strong")];
+  for (const h of heads) {
+    const name = (h.textContent || "").replace(/\s+/g, " ").trim();
+    if (!name || name.length > 70) continue;
+    // look at next siblings / parent block for title
+    let title = "";
+    let n = h.nextElementSibling;
+    for (let i = 0; i < 6 && n; i++, n = n.nextElementSibling) {
+      const t = (n.textContent || "").replace(/\s+/g, " ").trim();
+      if (!t) continue;
+      if (/mayor|commissioner|director|manager|chief|captain|clerk|official|coordinator|principal/i.test(t) && t.length < 120) {
+        title = t.split("\n")[0].trim();
+        break;
+      }
+    }
+    // parent text after name
+    if (!title && h.parentElement) {
+      const block = (h.parentElement.textContent || "").replace(/\s+/g, " ");
+      const m = block.match(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*(.{0,100}?)(?:Email|Phone|mailto|$)", "i"));
+      if (m) {
+        const cand = m[1].trim();
+        if (/mayor|commissioner|director|manager|chief|captain|clerk/i.test(cand)) title = cand;
+      }
+    }
+    if (/mayor|commissioner/i.test(title) || /weinberg|blachman|orlinsky|ain|kruss|friedland|bloom/i.test(name)) {
+      let group = "City Commission";
+      if (/mayor/i.test(title) && !/commissioner/i.test(title)) group = "City Commission";
+      push(name, title, group);
+    }
+  }
+
+  // Strategy B: mailto blocks — name near email
+  for (const a of doc.querySelectorAll('a[href^="mailto:"]')) {
+    const email = (a.getAttribute("href") || "").replace(/^mailto:/i, "").split("?")[0];
+    if (!email.includes("@")) continue;
+    let root = a.parentElement;
+    for (let i = 0; i < 4 && root; i++) {
+      const text = (root.textContent || "").replace(/\s+/g, " ").trim();
+      // try to extract Name Title email
+      const m = text.match(/([A-Z][A-Za-z .,'-]{2,60}?)\s+(Mayor|Vice Mayor|Commissioner[^@]{0,60}|[A-Za-z &/-]+Director[^@]{0,40}|City Manager|City Clerk|Chief[^@]{0,40})/i);
+      if (m) {
+        push(m[1], m[2].replace(/\s+/g, " ").trim(), /commission|mayor/i.test(m[2]) ? "City Commission" : "");
+        break;
+      }
+      root = root.parentElement;
+    }
+  }
+
+  // Strategy C: list items with strong name
+  for (const li of doc.querySelectorAll("li, .listItem, .card, article")) {
+    const strong = li.querySelector("strong, b, h3, h4");
+    if (!strong) continue;
+    const name = (strong.textContent || "").trim();
+    const rest = (li.textContent || "").replace(name, " ").replace(/\s+/g, " ").trim();
+    const tm = rest.match(/(Mayor|Commissioner[^|]{0,50}|City Manager|Director[^|]{0,40})/i);
+    if (tm) push(name, tm[1].trim(), /commission|mayor/i.test(tm[1]) ? "City Commission" : "");
+  }
+
+  return found;
+}
+
+function mergeLivePeople(existing, incoming, sourceUrl) {
+  const byKey = new Map();
+  for (const p of existing || []) {
+    byKey.set(normNameKey(p.legalName || p.name), { ...p });
+  }
+
+  const merged = [];
+  const used = new Set();
+
+  for (const inc of incoming) {
+    const key = normNameKey(inc.name);
+    const prev = byKey.get(key);
+    // fuzzy: last name match + first initial
+    let match = prev;
+    if (!match) {
+      const last = key.split(" ").filter(Boolean).pop();
+      for (const [k, v] of byKey) {
+        if (k.endsWith(last) && last.length > 2) {
+          match = v;
+          break;
+        }
+      }
+    }
+    if (match) {
+      used.add(normNameKey(match.legalName || match.name));
+      const next = {
+        ...match,
+        legalName: inc.name,
+        name: inc.name,
+        // keep displayName if set
+        displayName: match.displayName || "",
+        displayNameLocked: !!match.displayNameLocked,
+        baseTitle: inc.title || match.baseTitle || match.title,
+        title: inc.title || match.baseTitle || match.title,
+        group: inc.group || match.group,
+        source: sourceUrl || match.source,
+        // preserve VM + custom
+        viceMayor: !!match.viceMayor,
+        viceMayorForm: match.viceMayorForm || "short",
+        viceMayorCustom: match.viceMayorCustom || "",
+        id: match.id || inc.id,
+      };
+      applyNameExceptions(next);
+      merged.push(next);
+    } else {
+      const next = applyNameExceptions({ ...inc });
+      merged.push(next);
+    }
+  }
+
+  // Keep people not found on page (staff not on commission page) at end
+  for (const p of existing || []) {
+    const k = normNameKey(p.legalName || p.name);
+    if (!used.has(k) && !merged.some((m) => normNameKey(m.legalName || m.name) === k)) {
+      // If they were commission-only and vanished, drop; if staff, keep
+      if (/commission/i.test(p.group || "") && !p.keepIfMissing) continue;
+      merged.push(applyNameExceptions({ ...p }));
+    }
+  }
+
+  // Prefer commission order: mayor first, then seats
+  const rank = (p) => {
+    const t = (p.baseTitle || p.title || "").toLowerCase();
+    if (/^mayor\b/.test(t) && !/vice/.test(t)) return 0;
+    const seat = t.match(/seat\s*(\d+)/);
+    if (seat) return 10 + (+seat[1]);
+    if (/vice mayor/.test(t)) return 5;
+    if (/commissioner/.test(t)) return 20;
+    return 100;
+  };
+  merged.sort((a, b) => rank(a) - rank(b) || (a.name || "").localeCompare(b.name || ""));
+  return normalizePeople(merged);
+}
+
+function setLiveStatus(msg) {
+  const el = $("liveUpdateStatus");
+  if (el) el.textContent = msg;
+  if ($("statusPill")) $("statusPill").textContent = msg;
+}
+
+async function liveUpdateFromSource() {
+  const base = ($("sourceUrl") && $("sourceUrl").value.trim()) || "https://www.cityofaventura.com/200/City-Commission";
+  const urls = [
+    base,
+    "https://www.cityofaventura.com/200/City-Commission",
+    "https://www.cityofaventura.com/Directory.aspx",
+  ];
+  // unique
+  const list = [...new Set(urls.filter(Boolean))];
+  setLiveStatus("Fetching source pages…");
+  const all = [];
+  const errors = [];
+  for (const url of list) {
+    try {
+      setLiveStatus("Fetching " + url.replace(/^https?:\/\//, "").slice(0, 40) + "…");
+      const htmlText = await fetchHtmlViaProxy(url);
+      const parsed = parsePeopleFromHtml(htmlText, url);
+      all.push(...parsed);
+      setLiveStatus(`Found ${parsed.length} on ${url.split("/").pop()}`);
+    } catch (e) {
+      errors.push(`${url}: ${e.message || e}`);
+    }
+  }
+
+  // de-dupe incoming by name
+  const dedup = [];
+  const seen = new Set();
+  for (const p of all) {
+    const k = normNameKey(p.name);
+    if (seen.has(k)) {
+      // prefer entry with richer title
+      const i = dedup.findIndex((x) => normNameKey(x.name) === k);
+      if (i >= 0 && (p.title || "").length > (dedup[i].title || "").length) dedup[i] = p;
+      continue;
+    }
+    seen.add(k);
+    dedup.push(p);
+  }
+
+  if (!dedup.length) {
+    setLiveStatus("Live update failed — could not parse source (CORS or page change). Built-in roster kept.");
+    console.warn("live update errors", errors);
+    alert("Could not live-update from the website.\n\n" + (errors.slice(0, 3).join("\n") || "No people parsed.") + "\n\nYour current roster was not changed.");
+    return;
+  }
+
+  const before = people.length;
+  people = mergeLivePeople(people, dedup, base);
+  // Always re-apply Clif exception etc.
+  people.forEach(applyNameExceptions);
+
+  if (!people.find((p) => p.id === selectedId)) {
+    selectedId = people[0]?.id || null;
+  }
+  renderList();
+  renderPerson();
+  if (typeof playIn === "function") playIn();
+  persistState?.();
+  setLiveStatus(`Live update OK · ${people.length} people (was ${before}) · overrides kept`);
+}
+
+function wireLiveUpdate() {
+  const run = () => liveUpdateFromSource();
+  $("btnLiveUpdate")?.addEventListener("click", run);
+  $("btnLiveUpdateAdv")?.addEventListener("click", run);
+}
+wireLiveUpdate();
+// Apply nickname exceptions (Clif, etc.) once helpers exist
+if (typeof people !== "undefined" && Array.isArray(people)) {
+  people.forEach((p) => applyNameExceptions(p));
+  if (typeof renderList === "function") { /* may run before renderList defined */ }
+}
+
+
+
 function wireSimpleUx() {
   $("modeSimple")?.addEventListener("click", () => setAppMode("simple"));
   $("modeAdvanced")?.addEventListener("click", () => setAppMode("advanced"));
@@ -3448,6 +3802,11 @@ wireSimpleUx();
 });
 
 
+// Apply Clif + other name exceptions then paint
+if (typeof people !== "undefined") {
+  people = normalizePeople(people);
+  people.forEach(applyNameExceptions);
+}
 // initial play
 playIn();
 window.addEventListener("resize", fitText);
