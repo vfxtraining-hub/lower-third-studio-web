@@ -4378,10 +4378,41 @@ function measureTextWidth(ctx, text, font) {
 
 
 /** Dual title plate — full on-air title without "City of Aventura". Uppercase for package. */
+/** Dual-only org/role shorteners (title plate). Longest match first. */
+const DUAL_TITLE_ABBREV = [
+  [/Aventura City of Excellence School/gi, "ACES"],
+  [/Aventura City of Excellence/gi, "ACES"],
+  [/Don Soffer Aventura High School/gi, "DSAHS"],
+  [/Don Soffer(?:\s+Aventura)?\s+High School/gi, "DSAHS"],
+  [/Aventura High School/gi, "DSAHS"],
+  [/Aventura Police Department/gi, "APD"],
+  [/Aventura Police Dept\.?/gi, "APD"],
+  [/Public Works\s*&\s*Transportation/gi, "Public Works"],
+  [/Parks\s*&\s*Recreation/gi, "Parks & Rec"],
+  [/Community Development/gi, "Comm. Dev."],
+  [/Community Services/gi, "Comm. Services"],
+  [/Community Program/gi, "Comm. Program"],
+  [/Human Resources/gi, "HR"],
+  [/Information Technology/gi, "IT"],
+  [/Public Records Specialist/gi, "Public Records"],
+  [/Multimedia Specialist/gi, "Multimedia"],
+  [/Executive Assistant/gi, "Exec. Assistant"],
+  [/Procurement Manager/gi, "Procurement"],
+  [/Building Official/gi, "Building Official"],
+  [/ADA Coordinator/gi, "ADA"],
+];
+
 function dualTitleStripOrg(s) {
-  return String(s || "")
+  let out = String(s || "");
+  // Drop city org name first
+  out = out
     .replace(/\s*[·|,]\s*City of Aventura\s*$/i, "")
-    .replace(/\s*City of Aventura\s*/gi, " ")
+    .replace(/\s*City of Aventura\s*/gi, " ");
+  // Abbreviate known long orgs / phrases
+  for (const [re, short] of DUAL_TITLE_ABBREV) {
+    out = out.replace(re, short);
+  }
+  return out
     .replace(/\s*[·|]\s*/g, " · ")
     .replace(/\s+/g, " ")
     .replace(/^[·\s]+|[·\s]+$/g, "")
