@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DWIM Logic — AI Production Agency</title>
+<meta name="description" content="30 years of production craft, scaled with AI and MCP. Better, faster, and cheaper. All three.">
+<style>
+:root{--bg:#07090d;--panel:#10141c;--line:#1e2633;--text:#e8edf5;--mute:#8d9bb0;--acc:#4de0c1;--acc2:#6aa8ff}
+@media (prefers-color-scheme:light){:root{--bg:#f7f8fa;--panel:#fff;--line:#e1e5ec;--text:#0d1320;--mute:#556176;--acc:#0a9d82;--acc2:#2563eb}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:20px 0}
+.logo{font-weight:800;letter-spacing:.02em}.logo span{color:var(--acc)}
+.btn{display:inline-block;padding:12px 20px;border-radius:10px;background:var(--acc);color:#04120f;font-weight:700;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.hero{padding:72px 0 56px}
+.eyebrow{color:var(--acc);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase}
+h1{font-size:clamp(36px,6vw,64px);line-height:1.05;margin:12px 0 18px;letter-spacing:-.02em}
+h1 em{font-style:normal;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:20px;color:var(--mute);max-width:700px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:48px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+.card h3{margin:0 0 6px}.card p{margin:0;color:var(--mute)}
+.big{font-size:28px;font-weight:800;color:var(--acc)}
+section{padding:44px 0}
+h2{font-size:30px;margin:0 0 8px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.price{color:var(--acc);font-weight:700;margin-top:10px}
+form{display:grid;gap:12px;max-width:560px}
+input,textarea,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);font:inherit}
+footer{border-top:1px solid var(--line);padding:28px 0;color:var(--mute);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo">DWIM<span>Logic</span></div>
+    <a class="btn ghost" href="#brief">Send a brief</a>
+  </nav>
+
+  <header class="hero">
+    <div class="eyebrow">AI production agency</div>
+    <h1>A one-person army with a <em>30-year bench.</em></h1>
+    <p class="lead">Thirty years of directing, editing, graphics, sound and delivery, now powered by AI and MCP. Work the industry called impossible: better, faster and cheaper, all three. Scaled to whatever you need, on budget or under.</p>
+    <div class="cta">
+      <a class="btn" href="#brief">Get a quote in 48 hours</a>
+      <a class="btn ghost" href="#offers">See what we do</a>
+    </div>
+  </header>
+
+  <div class="three">
+    <div class="card"><div class="big">Better</div><p>Senior-level taste and QC on every frame. Nothing ships unchecked.</p></div>
+    <div class="card"><div class="big">Faster</div><p>Pipelines that turn days into hours, with rush delivery on request.</p></div>
+    <div class="card"><div class="big">Cheaper</div><p>Fixed prices that undercut traditional production without cutting corners.</p></div>
+  </div>
+
+  <section id="offers">
+    <h2>What we do</h2>
+    <p class="sub">Productized, fixed price, fixed date. Delivered in your NLE format.</p>
+    <div class="grid">
+      <div class="card"><h3>Overflow &amp; white-label</h3><p>Extra hands for agencies and producers. Rough cuts, cutdowns, versioning, captions. Invisible to your client.</p><div class="price">From $150 per deliverable</div></div>
+      <div class="card"><h3>Social cutdown packs</h3><p>One long asset into 10–30 platform-ready versions with captions and hooks.</p><div class="price">From $750</div></div>
+      <div class="card"><h3>Lower-third packages</h3><p>Animated broadcast graphics with alpha, rendered per person, ready for Resolve or any NLE.</p><div class="price">From $500</div></div>
+      <div class="card"><h3>Government &amp; institutional</h3><p>Meeting recaps, public information, anniversary packages, accessible captions.</p><div class="price">Pilot packages available</div></div>
+      <div class="card"><h3>Brand spots &amp; explainers</h3><p>AI-assisted generation blended with real footage where it counts.</p><div class="price">From $2,500</div></div>
+      <div class="card"><h3>Content engine retainer</h3><p>Monthly volume at a fixed price. Scales up or down with demand.</p><div class="price">From $3,000 / month</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <p class="sub">Brief in, finished media out.</p>
+    <div class="grid">
+      <div class="card"><h3>1. Brief</h3><p>Send what you have. Quote and timeline within 48 hours.</p></div>
+      <div class="card"><h3>2. Build</h3><p>Agent pipelines do the volume. A senior producer directs and approves.</p></div>
+      <div class="card"><h3>3. Deliver</h3><p>Two revision rounds included. Exports to your spec, on the date promised.</p></div>
+    </div>
+  </section>
+
+  <section id="brief">
+    <h2>Send a brief</h2>
+    <p class="sub">First cutdown free for new agency partners. Tell us what you need.</p>
+    <form action="mailto:hello@dwimlogic.com" method="post" enctype="text/plain">
+      <input name="name" placeholder="Name" required>
+      <input name="email" type="email" placeholder="Email" required>
+      <select name="type">
+        <option>Agency / producer overflow</option><option>Social cutdowns</option><option>Lower thirds / graphics</option>
+        <option>Government / institutional</option><option>Brand spot / explainer</option><option>Broadcast / streaming</option><option>Other</option>
+      </select>
+      <textarea name="brief" rows="5" placeholder="What are we making, and when do you need it?"></textarea>
+      <button class="btn" type="submit">Request quote</button>
+    </form>
+  </section>
+
+  <footer>© DWIM Logic · Do What I Mean · dwimlogic.com</footer>
+</div>
+</body>
+</html>
