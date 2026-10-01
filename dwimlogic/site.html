@@ -1,0 +1,382 @@
+<title>DWIM Logic</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout concept: the page is a timeline. A playhead rail tracks scroll as timecode; hero frames drift at different depths; every section is a chapter. */
+:root{
+  --bg:#0c1016;--bg2:#121821;--panel:#161d27;--ink:#eef1f5;--mute:#98a4b4;--line:#27313f;
+  --tally:#ff5a45;--tally-ink:#1b0703;--track:#1c2531;--glow:rgba(255,90,69,.16);
+  --f-display:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eef0f3;--bg2:#e4e8ed;--panel:#fafbfc;--ink:#10151c;--mute:#566170;--line:#cdd3da;--tally:#d9341f;--tally-ink:#fff;--track:#dde2e8;--glow:rgba(217,52,31,.1);color-scheme:light}}
+:root[data-theme="light"]{--bg:#eef0f3;--bg2:#e4e8ed;--panel:#fafbfc;--ink:#10151c;--mute:#566170;--line:#cdd3da;--tally:#d9341f;--tally-ink:#fff;--track:#dde2e8;--glow:rgba(217,52,31,.1);color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;overflow-x:clip}
+section{overflow-x:clip}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--f-body);overflow-x:hidden}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--tally);outline-offset:3px}
+
+/* top bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 20px;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.mark{font:800 19px var(--f-display);letter-spacing:-.01em;text-decoration:none;white-space:nowrap}
+.bar .btn{white-space:nowrap}
+@media (max-width:560px){.bar .tcbar{display:none}}
+.tcbar{font:500 12px var(--f-mono);color:var(--mute);display:flex;gap:8px;align-items:center}
+.rec{width:9px;height:9px;border-radius:50%;background:var(--tally);animation:blink 1.6s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+.btn{display:inline-block;font:500 15px var(--f-body);padding:12px 20px;border-radius:6px;border:1px solid var(--tally);background:var(--tally);color:var(--tally-ink);text-decoration:none;cursor:pointer;transition:transform .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn.alt{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.sm{padding:8px 14px;font-size:14px}
+
+/* playhead rail */
+.rail{position:fixed;right:14px;top:50%;transform:translateY(-50%);height:46vh;width:54px;z-index:20}
+.rail .line{position:absolute;right:8px;top:0;bottom:0;width:1px;background:var(--line)}
+.rail .head{position:absolute;right:3px;width:11px;height:11px;border-radius:50%;background:var(--tally);top:0;transition:none;box-shadow:0 0 0 4px var(--glow)}
+.rail .tick{position:absolute;right:0;width:54px;height:20px;margin-top:-10px;border:0;background:none;color:var(--mute);font:500 10px var(--f-mono);text-align:right;padding:0 20px 0 0;cursor:pointer;opacity:.0;transition:opacity .2s,color .2s}
+.rail:hover .tick,.rail .tick.on{opacity:1}
+.rail .tick.on{color:var(--ink)}
+.rail .tick::after{content:"";position:absolute;right:4px;top:9px;width:9px;height:1px;background:var(--mute)}
+@media (max-width:900px){.rail{display:none}}
+
+/* hero */
+.hero{position:relative;overflow:hidden;min-height:640px;display:grid;align-items:center;border-bottom:1px solid var(--line)}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 55% at 70% 30%,var(--glow),transparent 70%)}
+.layer{position:absolute;will-change:transform}
+.ghost{left:-2%;top:6%;font:800 clamp(140px,26vw,360px)/.85 var(--f-display);letter-spacing:-.05em;color:transparent;-webkit-text-stroke:1px var(--line);user-select:none;white-space:nowrap}
+.frame{aspect-ratio:16/9;border-radius:6px;border:1px solid var(--line);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.28)}
+.frame i{position:absolute;left:8px;top:6px;font:500 10px var(--f-mono);color:#fff;opacity:.85;font-style:normal;mix-blend-mode:difference}
+.frame::after{content:"";position:absolute;inset:14% 10%;border:1px dashed rgba(255,255,255,.28)}
+.f1{right:3%;top:10%;width:min(30vw,340px);background:linear-gradient(135deg,#ff5a45,#7a1f3d)}
+.f2{right:20%;top:52%;width:min(20vw,220px);background:linear-gradient(135deg,#2b6cff,#0c1a3a)}
+.f3{right:2%;top:62%;width:min(22vw,230px);background:linear-gradient(135deg,#19b5a0,#0b2f33)}
+.f4{right:36%;top:8%;width:min(11vw,130px);background:linear-gradient(135deg,#f2c14e,#5b3a06)}
+@media (max-width:700px){.f2,.f4{display:none}.f1{width:46vw;top:4%;opacity:.4}.f3{width:32vw;top:70%;opacity:.4}}
+.hero-in{position:relative;z-index:2;padding-block:72px 64px;width:100%}
+.eyebrow{font:500 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--tally);margin:0 0 14px}
+h1{font:800 clamp(40px,6.2vw,84px)/.98 var(--f-display);letter-spacing:-.035em;margin:0 0 20px;max-width:11ch;text-wrap:balance}
+h1 em{font-style:normal;color:var(--tally);white-space:nowrap}
+.lead{font-size:19px;color:var(--mute);max-width:46ch;margin:0 0 26px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.in1,.in2,.in3,.in4{animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
+.in2{animation-delay:.12s}.in3{animation-delay:.24s}.in4{animation-delay:.36s}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+/* sections */
+section{padding-block:80px;position:relative}
+h2{font:800 clamp(28px,4.4vw,48px)/1.05 var(--f-display);letter-spacing:-.025em;margin:0 0 10px;text-wrap:balance;max-width:20ch}
+.sub{color:var(--mute);max-width:60ch;margin:0 0 32px}
+.kicker{font:500 12px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 10px}
+.js .rv{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.js .rv.in{opacity:1;transform:none}
+
+/* signal stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.stat{padding:26px 22px;border-inline-end:1px solid var(--line);min-width:0}
+.stat:last-child{border-inline-end:0}
+.stat b{display:block;font:800 clamp(44px,6vw,64px)/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat b small{font-size:.5em;color:var(--tally)}
+.stat p{margin:8px 0 10px;color:var(--mute)}
+.stat a{font:400 11px var(--f-mono);color:var(--mute)}
+@media (max-width:640px){.stat{border-inline-end:0;border-bottom:1px solid var(--line)}.stat:last-child{border-bottom:0}}
+.turn{margin:28px 0 0;font:800 clamp(22px,3vw,32px)/1.2 var(--f-display);letter-spacing:-.02em;max-width:34ch}
+.turn span{color:var(--tally)}
+
+/* price ladder */
+.ladder{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px 20px 14px;overflow-x:auto}
+.ladder-in{min-width:560px}
+.lrow{display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:center;padding-block:9px}
+.lrow span{font-size:14px;color:var(--mute)}
+.lrow.us span{color:var(--ink);font-weight:500}
+.lane{position:relative;height:26px;background:var(--track);border-radius:4px}
+.rng{position:absolute;top:3px;bottom:3px;border-radius:3px;background:var(--mute);transform-origin:left;display:flex;align-items:center;justify-content:flex-end;padding-inline:8px;font:500 11px var(--f-mono);color:var(--bg);white-space:nowrap}
+.us .rng{background:var(--tally);color:var(--tally-ink)}
+.js .rng{transform:scaleX(0);transition:transform 1.1s cubic-bezier(.2,.7,.2,1)}
+.js .ladder.in .rng{transform:none}
+.js .ladder.in .lrow:nth-child(2) .rng{transition-delay:.1s}.js .ladder.in .lrow:nth-child(3) .rng{transition-delay:.2s}.js .ladder.in .lrow:nth-child(4) .rng{transition-delay:.3s}.js .ladder.in .lrow:nth-child(5) .rng{transition-delay:.45s}
+.axis{display:grid;grid-template-columns:200px 1fr;gap:14px;margin-top:6px}
+.axis div{position:relative;height:22px;border-top:1px solid var(--line)}
+.axis em{position:absolute;top:4px;transform:translateX(-50%);font:400 10px var(--f-mono);color:var(--mute);font-style:normal}
+.note{font:400 12px var(--f-mono);color:var(--mute);margin:12px 0 0}
+.ghost2{position:absolute;right:-1%;top:40px;font:800 clamp(100px,18vw,240px)/1 var(--f-display);color:transparent;-webkit-text-stroke:1px var(--line);pointer-events:none;user-select:none;will-change:transform}
+
+/* offers */
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:22px}
+.seg button{font:500 14px var(--f-body);padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mute);cursor:pointer;transition:all .2s}
+.seg button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;min-height:230px}
+.offer{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:flex;flex-direction:column;gap:8px;min-width:0;animation:rise .5s both}
+.offer:nth-child(2){animation-delay:.07s}.offer:nth-child(3){animation-delay:.14s}
+.offer h3{font:800 20px var(--f-display);margin:0;letter-spacing:-.01em}
+.offer p{margin:0;color:var(--mute);flex:1}
+.offer .p{font:500 14px var(--f-mono);color:var(--tally);margin-top:6px}
+.offer .t{font:400 12px var(--f-mono);color:var(--mute)}
+@media (prefers-reduced-motion:reduce){.offer{animation:none}}
+
+/* process timeline */
+.tl{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;overflow-x:auto}
+.tl-in{min-width:560px;display:grid;gap:8px}
+.ruler{display:flex;justify-content:space-between;font:400 11px var(--f-mono);color:var(--mute)}
+.track{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center}
+.track b{font:500 12px var(--f-mono);color:var(--mute)}
+.tlane{position:relative;height:32px;background:var(--track);border-radius:4px;overflow:hidden}
+.clip{position:absolute;top:3px;bottom:3px;border-radius:3px;font:500 11px var(--f-mono);display:flex;align-items:center;padding-inline:8px;white-space:nowrap;overflow:hidden;transform-origin:left}
+.c1{background:var(--ink);color:var(--bg)}.c2{background:var(--tally);color:var(--tally-ink)}.c3{border:1px solid var(--mute);color:var(--ink)}
+.js .clip{transform:scaleX(0);transition:transform .9s cubic-bezier(.2,.7,.2,1)}
+.js .tl.in .clip{transform:none}
+.js .tl.in .track:nth-child(3) .clip{transition-delay:.25s}.js .tl.in .track:nth-child(4) .clip{transition-delay:.5s}
+.play{position:absolute;top:0;bottom:0;width:2px;background:var(--tally);left:0;opacity:0}
+.js .tl.in .play{animation:sweep 3.2s .3s linear forwards}
+@keyframes sweep{0%{left:0;opacity:1}95%{opacity:1}100%{left:100%;opacity:0}}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:26px}
+.steps div{border-top:2px solid var(--ink);padding-top:12px}
+.steps h3{margin:0 0 4px;font:800 18px var(--f-display)}
+.steps p{margin:0;color:var(--mute)}
+
+/* rules */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.rule{padding:20px;border:1px solid var(--line);border-radius:10px;background:var(--panel);min-width:0}
+.rule h3{font:800 18px var(--f-display);margin:0 0 6px}
+.rule p{margin:0;color:var(--mute)}
+
+/* form */
+form{display:grid;gap:12px;max-width:560px}
+label{display:grid;gap:4px;font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+input,select,textarea{font:16px var(--f-body);padding:12px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);width:100%}
+.msg{min-height:1.4em;margin:0;color:var(--mute);font-size:14px}
+footer{border-top:1px solid var(--line);padding-block:22px 40px;font:400 12px var(--f-mono);color:var(--mute)}
+footer .wrap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.layer,.ghost2{transform:none!important}.rec{animation:none}.js .rv{opacity:1;transform:none}.in1,.in2,.in3,.in4{animation:none}}
+</style>
+
+<div class="bar">
+  <a class="mark" href="#top">DWIM Logic</a>
+  <div class="tcbar"><span class="rec"></span><span id="tcbar">TC 00:00:00:00</span></div>
+  <a class="btn sm" href="#brief">Send a brief</a>
+</div>
+
+<nav class="rail" id="rail" aria-label="Chapters"><div class="line"></div><div class="head" id="head"></div></nav>
+
+<header class="hero" id="top" data-chap="Open">
+  <div class="layer ghost" data-speed="0.18" aria-hidden="true">DWIM</div>
+  <div class="layer frame f4" data-speed="0.42" data-px="-14" aria-hidden="true"><i>A1 · 00:00:02:10</i></div>
+  <div class="layer frame f1" data-speed="0.22" data-px="-8" aria-hidden="true"><i>V1 · 00:00:00:00</i></div>
+  <div class="layer frame f2" data-speed="0.5" data-px="12" aria-hidden="true"><i>V2 · 00:00:06:18</i></div>
+  <div class="layer frame f3" data-speed="0.34" data-px="-18" aria-hidden="true"><i>V3 · 00:00:11:04</i></div>
+  <div class="wrap hero-in">
+    <p class="eyebrow in1">AI production agency</p>
+    <h1 class="in2">A one-person army with a <em>30-year bench.</em></h1>
+    <p class="lead in3">Three decades of directing, editing, graphics, sound and delivery, now run through AI and MCP pipelines. Better, faster and cheaper, all three, and scaled to whatever the job needs.</p>
+    <div class="row in4"><a class="btn" href="#brief">Get a quote in 48 hours</a><a class="btn alt" href="#gap">See where we sit</a></div>
+  </div>
+</header>
+
+<section id="signal" data-chap="Signal">
+  <div class="wrap">
+    <p class="kicker rv">What the market is saying</p>
+    <h2 class="rv">Everyone uses AI now. Audiences notice when it is sloppy.</h2>
+    <p class="sub rv">Speed is no longer a differentiator on its own. Finish and judgment are.</p>
+    <div class="stats rv">
+      <div class="stat"><b><span data-count="63">63</span><small>%</small></b><p>of video marketers used AI to create or edit video in 2026, up from 51% a year earlier.</p><a href="https://www.ngram.com/blog/ai-video-statistics-2026" target="_blank" rel="noopener">Industry survey roundup</a></div>
+      <div class="stat"><b><span data-count="83">83</span><small>%</small></b><p>of consumers say they can spot AI-generated video.</p><a href="https://www.businesswire.com/news/home/20260121875037/en/83-of-Consumers-Can-Spot-AI-Videos-36-Say-It-Lowers-Brand-Trust-According-to-Animotos-New-Report" target="_blank" rel="noopener">Animoto report, Jan 2026</a></div>
+      <div class="stat"><b><span data-count="36">36</span><small>%</small></b><p>say AI video lowers their trust in the brand behind it.</p><a href="https://www.businesswire.com/news/home/20260121875037/en/83-of-Consumers-Can-Spot-AI-Videos-36-Say-It-Lowers-Brand-Trust-According-to-Animotos-New-Report" target="_blank" rel="noopener">Animoto report, Jan 2026</a></div>
+    </div>
+    <p class="turn rv">So every job here gets a senior set of eyes. <span>That is the product.</span></p>
+  </div>
+</section>
+
+<section id="gap" data-chap="Position">
+  <div class="ghost2" data-speed="0.12" aria-hidden="true">$</div>
+  <div class="wrap">
+    <p class="kicker rv">Where we sit</p>
+    <h2 class="rv">Between a $2,000 editor and a $15,000 subscription.</h2>
+    <p class="sub rv">Monthly entry pricing for ongoing video work. Cheap options stop short of senior finishing. Enterprise options start at five figures and an annual contract.</p>
+    <div class="ladder rv" id="ladder" role="img" aria-label="Range chart of monthly prices: Penji 499 to 1995, white-label editors 2000 to 6000, freelance AI video 1500 to 8000, DWIM Logic 3000 to 12000, Superside 15000 to 75000 plus">
+      <div class="ladder-in" id="ladder-in"></div>
+    </div>
+    <p class="note rv">Log scale. Market ranges from public pricing pages and 2026 pricing guides; DWIM Logic range is our draft rate card.</p>
+  </div>
+</section>
+
+<section id="offers" data-chap="Offers">
+  <div class="wrap">
+    <p class="kicker rv">What we do</p>
+    <h2 class="rv">Pick your seat. See your price.</h2>
+    <p class="sub rv">Fixed price, fixed date, two revision rounds, delivered in your NLE format. Draft pricing; final rate card pending.</p>
+    <div class="seg rv" role="tablist" aria-label="Who you are" id="seg">
+      <button role="tab" aria-selected="true" data-k="agency">Agency or producer</button>
+      <button role="tab" aria-selected="false" data-k="brand">Brand or marketing team</button>
+      <button role="tab" aria-selected="false" data-k="gov">Government</button>
+      <button role="tab" aria-selected="false" data-k="broadcast">Broadcast or streaming</button>
+    </div>
+    <div class="offers" id="offers" role="tabpanel" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="process" data-chap="Process">
+  <div class="wrap">
+    <p class="kicker rv">How a job runs</p>
+    <h2 class="rv">A senior producer opens and closes every job.</h2>
+    <p class="sub rv">The pipeline does the volume in between. Over 24 hours, this is who touches the timeline.</p>
+    <div class="tl rv" id="tl" role="img" aria-label="Timeline: senior producer on brief and final QC, AI pipeline in the middle, audio mix and delivery on the third track">
+      <div class="tl-in">
+        <div class="ruler"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00 hrs</span></div>
+        <div class="track"><b>V1</b><div class="tlane"><div class="clip c1" style="left:0;width:18%">BRIEF + TASTE</div><div class="clip c1" style="left:80%;width:20%">FINAL QC</div><div class="play"></div></div></div>
+        <div class="track"><b>V2</b><div class="tlane"><div class="clip c2" style="left:12%;width:64%">AI PIPELINE · CUTS · GRAPHICS · VERSIONS · CAPTIONS</div></div></div>
+        <div class="track"><b>A1</b><div class="tlane"><div class="clip c3" style="left:30%;width:46%">MIX · LEVELS · LOUDNESS</div><div class="clip c3" style="left:80%;width:20%">DELIVER</div></div></div>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="rv"><h3>Brief</h3><p>Send what you have. Quote and timeline within 48 hours.</p></div>
+      <div class="rv"><h3>Build</h3><p>Pipelines handle the volume while a senior producer directs.</p></div>
+      <div class="rv"><h3>Deliver</h3><p>Two revisions included. Exports to your spec, on the promised date.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="rules" data-chap="Rules">
+  <div class="wrap">
+    <p class="kicker rv">Ground rules</p>
+    <h2 class="rv">Rules that protect your name.</h2>
+    <p class="sub rv">Disclosure laws for AI performers are already in force in New York and arrive in California in 2027. We build for them from day one.</p>
+    <div class="rules">
+      <div class="rule rv"><h3>Disclosed, always</h3><p>If a synthetic performer or voice appears, the cut carries the disclosure your state and the FTC expect.</p></div>
+      <div class="rule rv"><h3>Consent in writing</h3><p>No cloned voice or likeness without a signed release. No exceptions.</p></div>
+      <div class="rule rv"><h3>Cleared assets only</h3><p>Licensed models and music, with a rights log delivered alongside the final files.</p></div>
+      <div class="rule rv"><h3>Checked before it ships</h3><p>Loudness, safe areas, spelling, caption accuracy and delivery specs, every time.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="brief" data-chap="Brief">
+  <div class="wrap">
+    <p class="kicker rv">Start here</p>
+    <h2 class="rv">Send a brief.</h2>
+    <p class="sub rv">New agency partners get a first cutdown free. Quote in 48 hours.</p>
+    <form id="f" class="rv">
+      <label for="n">Name<input id="n" required></label>
+      <label for="e">Email<input id="e" type="email" required></label>
+      <label for="t">What you need
+        <select id="t"><option>Agency or producer overflow</option><option>Social cutdowns</option><option>Lower thirds and graphics</option><option>Government or institutional</option><option>Brand spot or explainer</option><option>Broadcast or streaming</option><option>Other</option></select>
+      </label>
+      <label for="b">Brief<textarea id="b" rows="4"></textarea></label>
+      <button class="btn" type="submit">Request quote</button>
+      <p class="msg" id="msg" role="status"></p>
+    </form>
+  </div>
+</section>
+
+<footer><div class="wrap"><span>DWIM Logic · Do What I Mean</span><span>dwimlogic.com · preview draft</span></div></footer>
+
+<script>
+(function(){
+  var d=document,root=d.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  root.classList.add('js');
+
+  /* price ladder (log scale, USD per month) */
+  var MIN=400,MAX=80000,L=Math.log10;
+  function pos(v){return (L(v)-L(MIN))/(L(MAX)-L(MIN))*100}
+  function fmt(v){return v>=1000&&v%1000===0?'$'+(v/1000)+'k':'$'+v.toLocaleString('en-US')}
+  var rows=[
+    ['Design subscriptions (Penji)',499,1995],
+    ['White-label editing retainers',2000,6000],
+    ['Freelance AI video retainers',1500,8000],
+    ['DWIM Logic content engine',3000,12000,1],
+    ['Superside (annual contract)',15000,75000]
+  ];
+  var h='';
+  rows.forEach(function(r){
+    var a=pos(r[1]),b=pos(r[2]);
+    h+='<div class="lrow'+(r[3]?' us':'')+'"><span>'+r[0]+'</span><div class="lane"><div class="rng" style="left:'+a+'%;width:'+(b-a)+'%">'+fmt(r[1])+' – '+fmt(r[2])+(r[0].indexOf('Super')===0?'+':'')+'</div></div></div>';
+  });
+  h+='<div class="axis"><span></span><div>';
+  [500,1000,2000,5000,10000,20000,50000].forEach(function(t){h+='<em style="left:'+pos(t)+'%">'+fmt(t)+'</em>'});
+  h+='</div></div>';
+  d.getElementById('ladder-in').innerHTML=h;
+
+  /* offers by buyer type */
+  var O={
+    agency:[
+      ['Overflow per deliverable','Rough cuts, cutdowns, versioning and captions, delivered under your name.','from $150','24–72 hrs · rush +50%'],
+      ['White-label bench','A standing senior-run team behind your agency, month to month.','from $2,500 / month','volume quoted in 48 hrs'],
+      ['First cutdown free','New agency partners try one deliverable before any commitment.','$0','one per partner']
+    ],
+    brand:[
+      ['Social cutdown pack','One long asset into 10 platform-ready versions with captions and hooks.','from $750','3 days'],
+      ['Brand spot or explainer','60 seconds. AI-assisted generation blended with real footage where it counts.','from $2,500','1–2 weeks'],
+      ['Content engine','Monthly volume at a fixed price. Scale up or down with demand.','from $3,000 / month','no annual lock-in']
+    ],
+    gov:[
+      ['Lower-third package','Animated broadcast graphics with alpha for councils, boards and events.','from $500','48 hrs'],
+      ['Meeting recap and public information','Short, accessible video from meetings, announcements and milestones.','pilot package','quoted per pilot'],
+      ['Accessibility pack','Captions, transcripts and audio description with human QC, ahead of the 2027 and 2028 ADA Title II dates.','from about $2.50 / min','monthly minimum applies']
+    ],
+    broadcast:[
+      ['Graphics packages','Per-person lower thirds as alpha PNG sequences, plus a Resolve Fusion title switcher.','from $500','48 hrs'],
+      ['Versioning and delivery QC','Masters, cutdowns and spec checks for broadcast and streaming delivery.','quoted per project','24–72 hrs'],
+      ['Post surge capacity','Senior editors and finishing when a schedule outgrows your team.','day or project rate','book ahead']
+    ]
+  };
+  var out=d.getElementById('offers'),seg=d.getElementById('seg');
+  function show(k){
+    out.innerHTML=O[k].map(function(o){return '<div class="offer"><h3>'+o[0]+'</h3><p>'+o[1]+'</p><div class="p">'+o[2]+'</div><div class="t">'+o[3]+'</div></div>'}).join('');
+    seg.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-selected',b.dataset.k===k)});
+  }
+  seg.addEventListener('click',function(e){var b=e.target.closest('button');if(b)show(b.dataset.k)});
+  show('agency');
+
+  /* reveal on scroll with failsafe */
+  var rv=[].slice.call(d.querySelectorAll('.rv'));
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.15});
+    rv.forEach(function(el){io.observe(el)});
+  }
+  setTimeout(function(){rv.forEach(function(el){el.classList.add('in')})},4000);
+
+  /* count-up for stats */
+  var cn=[].slice.call(d.querySelectorAll('[data-count]'));
+  if('IntersectionObserver' in window&&!reduce){
+    var co=new IntersectionObserver(function(es){es.forEach(function(e){
+      if(!e.isIntersecting)return;co.unobserve(e.target);
+      var el=e.target,to=+el.dataset.count,t0=performance.now();
+      (function step(t){var p=Math.min(1,(t-t0)/1100);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(step)})(t0);
+    })},{threshold:.6});
+    cn.forEach(function(el){el.textContent='0';co.observe(el)});
+    setTimeout(function(){cn.forEach(function(el){if(el.textContent==='0')el.textContent=el.dataset.count})},4500);
+  }
+
+  /* parallax + playhead */
+  var layers=[].slice.call(d.querySelectorAll('[data-speed]')),px=0,py=0,tick=false;
+  var chaps=[].slice.call(d.querySelectorAll('[data-chap]')),rail=d.getElementById('rail'),head=d.getElementById('head'),tcBar=d.getElementById('tcbar');
+  var ticks=[];
+  chaps.forEach(function(c){var b=d.createElement('button');b.className='tick';b.textContent=c.dataset.chap;b.addEventListener('click',function(){c.scrollIntoView({behavior:reduce?'auto':'smooth'})});rail.appendChild(b);ticks.push(b)});
+  function tc(p){var f=Math.floor(p*90*24),fr=f%24,s=Math.floor(f/24),z=function(n){return(n<10?'0':'')+n};return '00:'+z(Math.floor(s/60))+':'+z(s%60)+':'+z(fr)}
+  function place(){
+    var sy=scrollY,vh=innerHeight,dh=d.documentElement.scrollHeight-vh,p=dh>0?Math.min(1,Math.max(0,sy/dh)):0;
+    if(!reduce){
+      layers.forEach(function(el){
+        var s=+el.dataset.speed,r=el.parentElement.getBoundingClientRect(),off=el.classList.contains('ghost2')?(r.top+r.height/2-vh/2):sy;
+        var x=el.dataset.px?px*(+el.dataset.px):0,y=el.classList.contains('ghost2')?-off*s:sy*s*-1+py*(+el.dataset.px||0)*.4;
+        el.style.transform='translate3d('+x+'px,'+y+'px,0)';
+      });
+    }
+    var rh=rail.clientHeight;
+    head.style.top=(p*rh-5)+'px';tcBar.textContent='TC '+tc(p);
+    var cur=0;
+    chaps.forEach(function(c,i){var t=c.getBoundingClientRect().top;if(t<vh*.5)cur=i;ticks[i].style.top=(Math.min(1,(c.offsetTop+0)/(dh+vh))*rh)+'px'});
+    ticks.forEach(function(b,i){b.classList.toggle('on',i===cur)});
+    tick=false;
+  }
+  function req(){if(!tick){tick=true;requestAnimationFrame(place)}}
+  addEventListener('scroll',req,{passive:true});addEventListener('resize',req);
+  addEventListener('pointermove',function(e){px=(e.clientX/innerWidth-.5)*2;py=(e.clientY/innerHeight-.5)*2;req()},{passive:true});
+  place();
+
+  /* form */
+  d.getElementById('f').addEventListener('submit',function(e){e.preventDefault();d.getElementById('msg').textContent='Preview only. This form is not connected yet, so nothing was sent.'});
+})();
+</script>

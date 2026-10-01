@@ -2,6 +2,8 @@
 
 *Do What I Mean.* An AI-native production agency built on 30+ years of real production and post-production craft.
 
+> Market research and competitor analysis: see `RESEARCH.md`. Animated site: `site.html` (artifact version); `index.html` is the earlier plain draft.
+
 ## 1. Thesis
 
 Most "AI video" shops are prompt operators with no production discipline. Most traditional shops are priced and staffed for a pre-AI world. DWIM Logic sits in the gap:
