@@ -113,7 +113,7 @@ Reading: demand for video is large and AI use is mainstream, but the forecasts d
 5. **Build proof first:** three same-brief reels (traditional timeline vs DWIM). No case studies means no premium.
 6. **Line up a bench of three freelancers** before taking more than one retainer, or capacity will cap revenue.
 7. **Bundle training** (a 30-year teaching record is rare among agencies) as a lead magnet and second revenue stream.
-8. **Pricing check:** social packs at $750 per 10 versions ($75 each) sit at the top of the $35–$75 short-form band. Justify with finishing and review, or trim to $600.
+8. **Pricing decision (made):** social packs at $600 per 10 versions ($60 each), inside the $35–$75 short-form band, to win first jobs fast. Raise once proof and demand exist.
 
 ## 9. Sources
 - 11 Best AI Video Production Agencies in 2026 — awesomic.com/blog/ai-video-production-agencies
@@ -167,5 +167,5 @@ Jumper, Selects MCP, EditAssist, and Eddie AI let an in-house editor drive Premi
 
 ### Changes made as a result
 - Site: new "Why buyers switch" section built from the complaints above; estimator that prices common jobs from the draft rate card; animated lower-third mock-up in the hero (our own graphics product on show).
-- Open pricing question: $750 per 10 social versions vs the $35–$75 short-form market band.
-- Open strategy question: pursue partnerships with local municipal AV firms as a government channel.
+- Decided: social pack priced at $600 per 10 versions ($60 each) to win first jobs.
+- Decided: pursue municipal AV partnerships outside Florida only. Do not approach South Florida firms.

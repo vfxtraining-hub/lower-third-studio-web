@@ -50,7 +50,7 @@ Principle: price on *value and speed*, not hours. Undercut traditional by roughl
 | Offer | Starting price | Turnaround |
 |---|---|---|
 | Overflow edit/cutdown (per deliverable) | $150–$600 | 24–72 hrs |
-| Social pack (10 versions) | $750 | 3 days |
+| Social pack (10 versions) | $600 | 3 days |
 | Social pack (30 versions + captions) | $1,800 | 5 days |
 | Lower-third package (up to 10 people, 1080p alpha) | $500 | 48 hrs |
 | Lower-third package (roster 25+, dual style) | $1,200 | 3 days |
