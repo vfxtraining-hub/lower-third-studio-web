@@ -132,3 +132,40 @@ Reading: demand for video is large and AI use is mainstream, but the forecasts d
 - Market size — researchandmarkets.com, grandviewresearch.com, fortunebusinessinsights.com
 - AI ad regulation — sagaftra.org, lawcommentary.com, thestacc.com (FTC)
 - Resolve MCP — ymcinema.com (Sept 17, 2026), digitalproduction.com (Sept 8, 2026)
+
+## 10. Audit round 2 (added after first pass)
+
+New findings from review and pricing searches. Same caveat: search summaries only; competitor sites were not directly readable from this environment.
+
+### What buyers complain about (design inputs)
+- **Enterprise creative subscriptions (Superside-type):** Trustpilot about 3.7–3.9 of 5, G2 4.5, Clutch 2.9 (platforms disagree). Recurring themes: inconsistent quality, unclear hour allocation, slow turnaround for paid-media testing, project-management gaps. One reviewer reported a single motion video with three resizes costing $2,000–$4,000. Rush is 10–25% extra, standard delivery 48+ hrs.
+  *Use:* per-version pricing, named turnarounds, rush at a flat +50%.
+- **White-label editing:** problems trace to vague briefs and unlimited feedback, not editing skill (one guide says 90%+ of quality issues start in the brief). Buyers want timestamped notes, version control and revision limits.
+  *Use:* structured brief template, two revision rounds, change orders after that. Make the intake process a visible part of the offer.
+- **AI work that looks like AI:** 36% of consumers say it lowers brand trust.
+  *Use:* senior QC and disclosure as headline features.
+
+### More competitors
+| Competitor | Position | Price signal |
+|---|---|---|
+| Media.Monks / Studios.Monks | Enterprise; moved from time-based to asset-based pricing, promises 20–30% savings | No public pricing |
+| Gisteo | Cost-conscious explainers with a strategist | AI avatar 60s from about $1,000; AI cinematic 60s from about $3,500+ |
+| Vidico | Explainer and corporate video | Subscription from $5,000/mo; corporate/explainer $4,500–$20,000; commercial $15,000–$50,000+ |
+| Private Island | Mixed media, live action, animation, generative | Not published |
+| Full Moon Creative (Florida) | Municipal AV; 200+ council, commission and board meetings a year; South Florida cities listed | Not published |
+| Bonomotion (Miami) | Two-decade local production house with AI-assisted line "Motionize" | Not published |
+
+Notes:
+- Media.Monks moving to asset-based pricing supports our per-deliverable model. We should say "fixed price per asset" plainly.
+- Vidico's $5,000/mo subscription and Gisteo's $1,000–$3,500 per 60s sit right on top of our $3,000/mo and $2,500 spot. Our price advantage is smaller than versus Superside; differentiate on senior finishing and turnaround.
+- In government, local AV firms already hold meeting-broadcast contracts. Treat them as partners: they run the room, we supply recap video, graphics and accessibility files.
+
+### New tooling threat: agentic editing products
+Jumper, Selects MCP, EditAssist, and Eddie AI let an in-house editor drive Premiere, Resolve, Final Cut or Avid with Claude or Codex, and Resolve 21.1 does it natively. These sell tools, not outcomes.
+- *Risk:* editors at agencies can now do overflow work themselves.
+- *Response:* sell judgment, finishing, guaranteed turnaround and accountability. Never sell "we have automation." Consider offering the workflow as training for teams that want it.
+
+### Changes made as a result
+- Site: new "Why buyers switch" section built from the complaints above; estimator that prices common jobs from the draft rate card; animated lower-third mock-up in the hero (our own graphics product on show).
+- Open pricing question: $750 per 10 social versions vs the $35–$75 short-form market band.
+- Open strategy question: pursue partnerships with local municipal AV firms as a government channel.

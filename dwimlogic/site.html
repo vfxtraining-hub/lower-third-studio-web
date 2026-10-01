@@ -150,6 +150,34 @@ input,select,textarea{font:16px var(--f-body);padding:12px;border-radius:6px;bor
 .msg{min-height:1.4em;margin:0;color:var(--mute);font-size:14px}
 footer{border-top:1px solid var(--line);padding-block:22px 40px;font:400 12px var(--f-mono);color:var(--mute)}
 footer .wrap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* animated lower third inside hero frame */
+.lt{position:absolute;left:8%;bottom:16%;display:grid;animation:ltin 6s ease-in-out infinite}
+.lt b{background:#fff;color:#0c1016;font:800 clamp(9px,1.3vw,14px)/1.3 var(--f-display);padding:3px 9px}
+.lt span{background:rgba(0,0,0,.74);color:#fff;font:500 clamp(7px,.9vw,11px)/1.4 var(--f-mono);padding:2px 9px}
+@keyframes ltin{0%,8%{transform:translateX(-130%)}18%,76%{transform:none}88%,100%{transform:translateX(-130%)}}
+@media (prefers-reduced-motion:reduce){.lt{animation:none}}
+
+/* switch cards */
+.fixg{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.fixc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:10px;align-content:start;min-width:0}
+.fixc .pain{font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.fixc h3{font:800 20px/1.15 var(--f-display);margin:0;letter-spacing:-.01em}
+.fixc p{margin:0;color:var(--mute)}
+.fixc .ans{border-top:1px solid var(--line);padding-top:10px;color:var(--ink)}
+.fixc .ans b{color:var(--tally);font:500 12px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
+.fixc a{font:400 11px var(--f-mono);color:var(--mute)}
+
+/* estimator */
+.est{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px;display:grid;gap:16px}
+.est h3{font:800 20px var(--f-display);margin:0;letter-spacing:-.01em}
+.est-grid{display:grid;grid-template-columns:2fr 1fr auto;gap:12px;align-items:end}
+.chk{display:flex;gap:8px;align-items:center;font:500 13px var(--f-body);text-transform:none;letter-spacing:0;color:var(--ink);padding-bottom:12px}
+.chk input{width:auto}
+.est-out{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
+.est-out strong{font:800 clamp(34px,5vw,52px)/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--tally)}
+.est-out span{color:var(--mute);font-size:14px}
+@media (max-width:640px){.est-grid{grid-template-columns:1fr}.chk{padding-bottom:0}}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.layer,.ghost2{transform:none!important}.rec{animation:none}.js .rv{opacity:1;transform:none}.in1,.in2,.in3,.in4{animation:none}}
 </style>
 
@@ -164,7 +192,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 <header class="hero" id="top" data-chap="Open">
   <div class="layer ghost" data-speed="0.18" aria-hidden="true">DWIM</div>
   <div class="layer frame f4" data-speed="0.42" data-px="-14" aria-hidden="true"><i>A1 · 00:00:02:10</i></div>
-  <div class="layer frame f1" data-speed="0.22" data-px="-8" aria-hidden="true"><i>V1 · 00:00:00:00</i></div>
+  <div class="layer frame f1" data-speed="0.22" data-px="-8" aria-hidden="true"><i>V1 · 00:00:00:00</i><div class="lt"><b>Alex Rivera</b><span>DIRECTOR OF OPERATIONS</span></div></div>
   <div class="layer frame f2" data-speed="0.5" data-px="12" aria-hidden="true"><i>V2 · 00:00:06:18</i></div>
   <div class="layer frame f3" data-speed="0.34" data-px="-18" aria-hidden="true"><i>V3 · 00:00:11:04</i></div>
   <div class="wrap hero-in">
@@ -186,6 +214,20 @@ footer .wrap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
       <div class="stat"><b><span data-count="36">36</span><small>%</small></b><p>say AI video lowers their trust in the brand behind it.</p><a href="https://www.businesswire.com/news/home/20260121875037/en/83-of-Consumers-Can-Spot-AI-Videos-36-Say-It-Lowers-Brand-Trust-According-to-Animotos-New-Report" target="_blank" rel="noopener">Animoto report, Jan 2026</a></div>
     </div>
     <p class="turn rv">So every job here gets a senior set of eyes. <span>That is the product.</span></p>
+  </div>
+</section>
+
+<section id="fix" data-chap="Switch">
+  <div class="wrap">
+    <p class="kicker rv">Why buyers switch</p>
+    <h2 class="rv">We built the offer around what buyers complain about.</h2>
+    <p class="sub rv">Patterns from public reviews and agency buying guides in 2026, not our own claims.</p>
+    <div class="fixg">
+      <div class="fixc rv"><span class="pain">Slow and unclear value</span><h3>"We needed volume and speed but we got neither."</h3><p>A reviewer's summary of an enterprise creative subscription. Another reported one motion video plus three resizes costing $2,000 to $4,000.</p><div class="ans"><b>Our fix</b>Fixed price per deliverable, a named turnaround, rush at +50%.</div><a href="https://harloop.com/blogs/superside-review" target="_blank" rel="noopener">Review roundup, 2026</a></div>
+      <div class="fixc rv"><span class="pain">Brief and revision chaos</span><h3>Most quality problems start with a vague brief.</h3><p>Agency guides say unlimited feedback and weak briefs turn outsourced editing into a margin leak.</p><div class="ans"><b>Our fix</b>A structured brief, timestamped notes, two revision rounds, then a clear change order.</div></div>
+      <div class="fixc rv"><span class="pain">AI that looks like AI</span><h3>36% say it lowers trust in the brand.</h3><p>Viewers are getting better at spotting generated footage that nobody finished.</p><div class="ans"><b>Our fix</b>A senior producer on every cut, disclosed AI, cleared assets.</div><a href="https://www.businesswire.com/news/home/20260121875037/en/83-of-Consumers-Can-Spot-AI-Videos-36-Say-It-Lowers-Brand-Trust-According-to-Animotos-New-Report" target="_blank" rel="noopener">Animoto report, Jan 2026</a></div>
+      <div class="fixc rv"><span class="pain">Lock-in</span><h3>Annual terms from $15,000 a month.</h3><p>Enterprise creative subscriptions commonly require 12 months up front, plus software fees.</p><div class="ans"><b>Our fix</b>Month to month from $3,000. Scale up or down when the work does.</div></div>
+    </div>
   </div>
 </section>
 
@@ -213,7 +255,19 @@ footer .wrap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
       <button role="tab" aria-selected="false" data-k="gov">Government</button>
       <button role="tab" aria-selected="false" data-k="broadcast">Broadcast or streaming</button>
     </div>
-    <div class="offers" id="offers" role="tabpanel" aria-live="polite"></div>
+    <div class="offers" id="offers-out" role="tabpanel" aria-live="polite"></div>
+    <div class="est rv" id="est">
+      <h3>Estimate a job</h3>
+      <div class="est-grid">
+        <label for="et">Deliverable<select id="et"></select></label>
+        <label for="eq">Quantity<input id="eq" type="number" min="1" value="10" inputmode="numeric"></label>
+        <label class="chk" for="er"><input id="er" type="checkbox"> Rush, under 24 hrs</label>
+      </div>
+      <div class="est-out" role="status" aria-live="polite"><strong id="ep">$750</strong><span id="en"></span></div>
+      <div class="row"><button class="btn sm" type="button" id="eu">Put this estimate in my brief</button></div>
+      <p class="note">Draft rates. An estimate, not a quote. Final price in 48 hours.</p>
+    </div>
+
   </div>
 </section>
 
@@ -321,13 +375,43 @@ footer .wrap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
       ['Post surge capacity','Senior editors and finishing when a schedule outgrows your team.','day or project rate','book ahead']
     ]
   };
-  var out=d.getElementById('offers'),seg=d.getElementById('seg');
+  var out=d.getElementById("offers-out"),seg=d.getElementById('seg');
   function show(k){
     out.innerHTML=O[k].map(function(o){return '<div class="offer"><h3>'+o[0]+'</h3><p>'+o[1]+'</p><div class="p">'+o[2]+'</div><div class="t">'+o[3]+'</div></div>'}).join('');
     seg.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-selected',b.dataset.k===k)});
   }
   seg.addEventListener('click',function(e){var b=e.target.closest('button');if(b)show(b.dataset.k)});
   show('agency');
+
+
+  /* estimator */
+  var E={
+    cut:{n:'Overflow cutdowns',u:150,min:1,per:'deliverable',tat:'24–72 hrs'},
+    soc:{n:'Social versions',u:75,min:10,per:'version',tat:'about 3 days'},
+    lt:{n:'Lower thirds (people)',u:50,min:10,per:'person',tat:'48 hrs'},
+    spot:{n:'60-second brand spots',u:2500,min:1,per:'spot',tat:'1–2 weeks'},
+    cap:{n:'Captions with human QC (minutes)',u:2.5,min:100,per:'minute',tat:'24–48 hrs'}
+  };
+  var et=d.getElementById('et'),eq=d.getElementById('eq'),er=d.getElementById('er'),ep=d.getElementById('ep'),en=d.getElementById('en'),est={};
+  Object.keys(E).forEach(function(k){var o=d.createElement('option');o.value=k;o.textContent=E[k].n;et.appendChild(o)});
+  et.value='soc';
+  function money(v){return '$'+Math.round(v).toLocaleString('en-US')}
+  function calc(){
+    var k=et.value,e=E[k],q=Math.max(1,parseInt(eq.value,10)||1),note='';
+    if(q<e.min){q=e.min;note=' Minimum is '+e.min+'.'}
+    var unit=e.u;if(k==='lt'&&q>=25)unit=48;
+    var t=q*unit;if(k==='cap'&&t<250){t=250;note=' Minimum job is $250.'}
+    if(er.checked)t*=1.5;
+    est={t:t,txt:q+' × '+e.n.toLowerCase().replace(/ \(.*\)/,'')+(er.checked?', rush':'')};
+    ep.textContent=money(t);
+    en.textContent=money(unit*(er.checked?1.5:1))+' per '+e.per+' · '+(er.checked?'under 24 hrs':e.tat)+'.'+note;
+  }
+  [et,eq,er].forEach(function(el){el.addEventListener('input',calc);el.addEventListener('change',calc)});
+  calc();
+  d.getElementById('eu').addEventListener('click',function(){
+    var b=d.getElementById('b');b.value='Estimate: '+est.txt+' at about '+money(est.t)+'.\n\n'+b.value;
+    d.getElementById('brief').scrollIntoView({behavior:reduce?'auto':'smooth'});
+  });
 
   /* reveal on scroll with failsafe */
   var rv=[].slice.call(d.querySelectorAll('.rv'));
