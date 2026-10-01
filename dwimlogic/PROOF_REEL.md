@@ -1,3 +1,5 @@
+> **Superseded by `EPIC_REEL.md`.** The agency's proof reel will be generated, not filmed. The two-clock graphics in `reel-graphics.html` are reused for the closing making-of timer. This file is kept for reference.
+
 # Proof Reel — Director's Package
 
 **Title:** One Brief. Two Clocks.
