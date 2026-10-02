@@ -218,3 +218,8 @@ Honest read of draft 4: competent but template-grade. Every section was a kicker
 - **Viewfinder details.** Corner brackets, running timecode in the header, REC and 24P and 2.39:1 on the hero, a progress line under the header.
 - **Build.** `site.src.html` is the template, `build_site.py` inlines the images into the single-file `site.html`.
 - **Gap.** The "army assembles" wide shot could not be retrieved (the tool would not return that image inline); the screen-wall frame stands in for it.
+
+### Draft 6 (font and parallax)
+- **Font.** The hero face changed from Bricolage Grotesque to **Anton** (condensed poster capitals, one weight) with Instrument Serif italic for the accent phrase. I compared five candidates rendered against the hero art (Big Shoulders Display, Anton, Syne, Unbounded, Oswald). Big Shoulders showed overlapping-stroke artefacts in its M and W at heavy weights, so it was dropped. Anton is also used for the years, the market numerals and section headings.
+- **Parallax.** Hero art drifts slower than scroll while the headline lifts and fades; each era frame slides sideways and scales as the pinned sequence advances; work demos and their text move at opposite rates; the market numerals drift at different speeds; the army and closing images shift behind the text.
+- **Testing note.** Earlier screenshots had been rendering fallback fonts. Fonts are now installed locally for checks, so what was reviewed matches what a browser with Google Fonts shows.
