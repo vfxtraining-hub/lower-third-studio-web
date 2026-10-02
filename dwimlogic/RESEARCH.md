@@ -169,3 +169,41 @@ Jumper, Selects MCP, EditAssist, and Eddie AI let an in-house editor drive Premi
 - Site: new "Why buyers switch" section built from the complaints above; estimator that prices common jobs from the draft rate card; animated lower-third mock-up in the hero (our own graphics product on show).
 - Decided: social pack priced at $600 per 10 versions ($60 each) to win first jobs.
 - Decided: pursue municipal AV partnerships outside Florida only. Do not approach South Florida firms.
+
+## 11. Website design audit (production and post houses)
+
+Method and limit: I could not open the top houses' sites from this environment (every site fetch was blocked). This is built from design roundups and 2026 best-practice guides found by search, not from first-hand viewing of Framestore, Company 3, The Mill, Territory or the AI studios. Treat it as a pattern audit, then compare against the live sites yourself.
+
+### What the best production and post sites do
+1. **Reel first.** A full-bleed, muted, looping montage fills the first screen: 6–12 seconds, self-hosted H.264 around 1080p and under about 4 MB, with a poster frame for slow connections and a reduced-motion fallback. A play button opens the full reel with sound. Never autoplay with sound.
+2. **A hero that answers "is this for me?"** One headline, one supporting sentence, one primary call to action, one trust signal. Competing CTAs convert worse.
+3. **Work over words.** A grid of projects with hover previews, and for reputation-led shops a page per project with brief, constraints, credits and the film.
+4. **Big editorial type and restraint.** Bold typography, large animated headlines, purposeful scroll scenes. Studios that over-animate make visitors "seasick."
+5. **Fast.** Roughly 7% fewer conversions per second of load delay.
+6. **Short path to contact.** Important pages within three clicks, a visible CTA at top right.
+7. **AI-studio look.** Dark mode, generative gradients, monospace type for technical credibility. This is the default; it is also what every AI vendor looks like.
+
+### How the first draft of our site stacked up
+| Pattern | Draft 3 | Gap |
+|---|---|---|
+| Reel-first hero | Floating gradient frames | No footage; frames looked like placeholders |
+| One CTA and a trust signal | Two buttons, no trust line | Split attention |
+| Work you can watch | Static offer cards | No proof of craft at a glance |
+| Capabilities at a glance | None | Visitors had to read to learn what we do |
+| Restraint | Parallax frames plus rail plus ghost text | Busy |
+| AI-vendor sameness | Dark, mono | Needed broadcast-craft vocabulary to differ |
+
+### What changed in draft 4
+- **Hero:** a canvas soundstage at dawn that previews the epic reel's look: nine truss lights snapping on in sequence, dust, one lone figure under a work lamp, a blinking red tally light. One primary button plus a trust line (30 years, fixed price, senior QC). Ready to take the reel: set two URLs in the script and a muted loop plays behind the headline and a "Watch the reel" button opens the full cut with sound. Until then it says "Reel in production" honestly.
+- **Capabilities ticker** under the hero: Direct, Edit, Grade, Mix, Motion graphics, Lower thirds, Versioning, Captions, Loudness, Delivery specs.
+- **"Six deliverables. Watch each one work."** Replaces the offer cards with live demos: a 24-hour turnaround clock counting down to Delivered, one frame peeling into 9:16, 1:1 and 4:5, a lower third sliding in on an alpha chip, captions lighting word by word, a letterboxed brand-spot plate, and a month of deliverables filling a calendar. Each shows price and turnaround. Buyer-type filter (agency, brand, government, broadcaster) dims what does not apply. "Estimate this" jumps to the estimator with that item selected.
+- **Order:** work first, then process, then the market case, then price position, then why buyers switch, then ground rules, then the brief.
+- **Navigation:** Work, Process, Pricing, plus the playhead rail.
+- **Performance and motion:** canvas capped at 1.5x pixel density, pauses off-screen and in hidden tabs, static frame for reduced motion. Demos are CSS only, and the clock only runs while on screen.
+
+### Still missing (cannot be faked)
+- **The reel itself.** The single biggest gap against every top site.
+- **Project pages with credits.** None exist. Build the first three from the reel and two sample jobs.
+- **Client proof.** No logos or quotes until real ones exist. Do not use placeholders.
+- **A real form endpoint.** The brief form is still a preview.
+- **Sound.** Optional: a muted-by-default sound toggle for the reel once it exists.
