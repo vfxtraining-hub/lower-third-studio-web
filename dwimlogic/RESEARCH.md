@@ -207,3 +207,14 @@ Method and limit: I could not open the top houses' sites from this environment (
 - **Client proof.** No logos or quotes until real ones exist. Do not use placeholders.
 - **A real form endpoint.** The brief form is still a preview.
 - **Sound.** Optional: a muted-by-default sound toggle for the reel once it exists.
+
+### Draft 5 (after "design is weak, looks basic")
+Honest read of draft 4: competent but template-grade. Every section was a kicker, a heading and a grid of identical cards on flat dark, with no imagery. The fix was real imagery and a few big moments.
+- **Generated key art.** Eight 2K stills made with Artlist (Seedream 5.0 Flash, 50 credits each, 450 spent in total, 3,079 left) from one style bible. Prompts and generation IDs are in `assets/README.md`. Delivered as 1280x720 JPEGs by the tool, so they are soft on large screens; regenerate or upscale before launch.
+- **Signature moment.** "Thirty years of craft": a pinned scroll sequence that cross-fades five generated frames (1996 film, 2002 tape, 2010 timeline, 2018 grade, 2026 agents) under a poster-scale year and one line each.
+- **Poster-scale type.** Bricolage Grotesque 800 at up to 150px, with Instrument Serif italic for the emphasised word in each headline.
+- **Rhythm.** Dark image sections alternate with two "paper" bands (process, pricing) so the page is not one flat dark.
+- **Cards removed.** Work is now six full-width rows with a live demo beside each; the market stats are page-wide numerals; "why buyers switch" is a ruled four-column list.
+- **Viewfinder details.** Corner brackets, running timecode in the header, REC and 24P and 2.39:1 on the hero, a progress line under the header.
+- **Build.** `site.src.html` is the template, `build_site.py` inlines the images into the single-file `site.html`.
+- **Gap.** The "army assembles" wide shot could not be retrieved (the tool would not return that image inline); the screen-wall frame stands in for it.
