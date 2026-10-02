@@ -195,3 +195,19 @@ If you need it sooner, the compressed version is a 45-second, 12-shot reel that 
 3. **Voice:** record your own, or pick a licensed AI voice?
 4. **Title:** "The Army of One," or something else?
 5. **Timing:** wait for the October 20 renewal for the full build, or go with the compressed 45-second version?
+
+## 13. Phase A status (October 2, 2026)
+
+**Done.** Defaults used while decisions were open: faceless hero, working title "The Army of One", voice to be decided later.
+- **Stills:** 16 viewable lookbook stills (plus 2 generated but not returnable by the tool). 13 approved, 3 need a retake or revision. See `lookbook.html`.
+- **Test clips:** two 5-second Kling v3 Pro 1080p image-to-video clips (stage push-in, tally light). Only one frame of each could be reviewed here; motion needs your eyes in Artlist.
+- **Music:** one Lyria 3 Pro instrumental candidate. Not auditioned here.
+- **Spend:** 1,750 credits for Phase A (on top of 500 for the site key art). Artlist balance: **1,279**, renews October 20.
+
+**Retakes queued (about 150 credits):** shot 15 (formats: calmer light), shot 17 (lower third: broadcast bar, not HUD), shot 20 (freeze: figure upright, crew as light).
+
+**Producer's read.** The look holds. The strongest frames are the empty stage, the agent-era console, the cameras in symmetry and the final lone figure. The one concern is consistency of the lone figure: it is a different man in every frame. That is acceptable while he stays a back or a silhouette, and it is another reason to keep the film faceless.
+
+**Next gate:** you approve the look and listen to the music. Then Phase B waits for the October 20 renewal (about 25,000 credits for 22 shots at 2 to 3 takes each).
+
+**Still needed from you:** voice (your own or licensed), title, and whether to trim to the 45-second cut if the renewal does not refill to 80,000.
